@@ -24,11 +24,21 @@ class PlayersConfig:
 
 
 @dataclass(frozen=True)
+class DatabaseConfig:
+    host: str
+    port: int
+    database: str
+    user: str
+    password: str
+
+
+@dataclass(frozen=True)
 class Config:
     prefer_languages: list[Lang]
     download_path: Path
     episode_path: str
     download: bool
+    index_to_database: bool
     show_players: bool
     max_retry_time: int
     format: str
@@ -37,6 +47,7 @@ class Config:
     url: str
     players_config: PlayersConfig
     concurrent_downloads: dict[str, int]
+    database: DatabaseConfig
 
 
 # Load default config
@@ -105,5 +116,16 @@ config_dict["players_config"] = (
 del config_dict["players_hostname"]
 if config_dict.get("players"):  # Backward compatibility
     del config_dict["players"]
+
+# Handle database config
+# Environment variables override config file
+config_dict["database"] = DatabaseConfig(
+    host=os.getenv("DB_HOST", config_dict.get("database", {}).get("host", "localhost")),
+    port=int(os.getenv("DB_PORT", config_dict.get("database", {}).get("port", 3306))),
+    database=os.getenv("DB_NAME", config_dict.get("database", {}).get("database", "animesama_db")),
+    user=os.getenv("DB_USER", config_dict.get("database", {}).get("user", "animesama_user")),
+    password=os.getenv("DB_PASSWORD", config_dict.get("database", {}).get("password", "animesama_password")),
+)
+
 config = Config(**config_dict)
 del config_dict

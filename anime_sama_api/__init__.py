@@ -3,6 +3,7 @@ from .catalogue import Catalogue
 from .season import Season
 from .episode import Episode, Languages, Players
 from .langs import Lang, LangId, lang2ids, id2lang, flags
+from .database import Database, DatabaseConfig, index_episode
 
 try:
     from .cli.__main__ import main
@@ -38,6 +39,9 @@ __all__ = [
     "download",
     "multi_download",
     "main",
+    "Database",
+    "DatabaseConfig",
+    "index_episode",
 ]
 
 """__locals = locals()

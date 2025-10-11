@@ -9,6 +9,8 @@ episode_path = "{serie}/{season}/{episode}"
 
 # If it downloads or plays the selected episodes
 download = true
+# If enabled, index video links in database instead of downloading
+index_to_database = false
 show_players = false
 max_retry_time = 1024
 
@@ -32,3 +34,11 @@ video = 5
 [players_hostname]
 prefers = []
 bans = []
+
+# Database configuration (for indexing video links)
+[database]
+host = "localhost"
+port = 3306
+database = "animesama_db"
+user = "animesama_user"
+password = "animesama_password"

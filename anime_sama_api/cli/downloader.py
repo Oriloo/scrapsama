@@ -29,6 +29,7 @@ from .episode_extra_info import EpisodeWithExtraInfo
 from .error_handeling import YDL_log_filter, reaction_to
 from ..langs import Lang
 from .config import PlayersConfig, config
+from ..database import Database, index_episode
 
 
 logger = logging.getLogger(__name__)
@@ -75,9 +76,20 @@ def download(
     max_retry_time: int = 1024,
     format: str = "",
     format_sort: str = "",
+    index_to_database: bool = False,
 ) -> None:
     if not any(episode.warpped.languages.values()):
         logger.error("No player available")
+        return
+
+    # If indexing to database is enabled, save to database instead of downloading
+    if index_to_database:
+        logger.info(f"Indexing episode to database: {episode.warpped.name}")
+        success = index_episode(episode.warpped)
+        if success:
+            logger.info(f"Successfully indexed: {episode.warpped.name}")
+        else:
+            logger.error(f"Failed to index: {episode.warpped.name}")
         return
 
     me = download_progress.add_task(
@@ -196,6 +208,7 @@ def multi_download(
     max_retry_time: int = 1024,
     format: str = "",
     format_sort: str = "",
+    index_to_database: bool = False,
 ) -> None:
     """
     Not sure if you can use this function multiple times
@@ -217,4 +230,5 @@ def multi_download(
                     max_retry_time,
                     format,
                     format_sort,
+                    index_to_database,
                 )
