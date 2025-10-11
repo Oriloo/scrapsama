@@ -55,10 +55,13 @@ class Database:
             logger.info("Successfully connected to database")
             return True
         except ImportError:
-            logger.warning("mysql-connector-python not installed. Database features disabled.")
+            logger.error("mysql-connector-python not installed. Database features disabled.")
+            logger.error("Install with: pip install mysql-connector-python")
             return False
         except Exception as e:
-            logger.warning(f"Failed to connect to database: {e}. Database features disabled.")
+            logger.error(f"Failed to connect to database: {e}")
+            logger.error(f"Connection details: host={self.config.host}, port={self.config.port}, database={self.config.database}, user={self.config.user}")
+            logger.error("Please check that MySQL is running and credentials are correct")
             return False
     
     def initialize_schema(self):

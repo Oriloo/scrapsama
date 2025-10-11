@@ -90,6 +90,10 @@ def download(
             logger.info(f"Successfully indexed: {episode.warpped.name}")
         else:
             logger.error(f"Failed to index: {episode.warpped.name}")
+            logger.error("Please ensure:")
+            logger.error("  1. Database is running and accessible")
+            logger.error("  2. Database schema is initialized: docker compose run --rm app python setup_database.py")
+            logger.error("  3. mysql-connector-python is installed")
         return
 
     me = download_progress.add_task(

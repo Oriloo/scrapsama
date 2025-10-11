@@ -113,19 +113,40 @@ SELECT DISTINCT language FROM players;
 - Make sure you pulled the latest changes
 - Rebuild the Docker image: `docker compose build app`
 
-### Videos still downloading
-- Check `INDEX_TO_DATABASE` is set to `true` in docker-compose.yml
-- Restart the app service: `docker compose restart app`
-- Check config with: `docker compose run --rm app python -c "from anime_sama_api.cli.config import config; print(f'index_to_database: {config.index_to_database}')"`
+### "Failed to index: Episode 1"
 
-### Database connection failed
-- Make sure MySQL service is running: `docker compose ps`
-- Check database is healthy: `docker compose logs mysql`
-- Verify environment variables in docker-compose.yml
+This error appears when the database connection or setup failed. Check the logs above the error for the specific cause:
 
-### Missing mysql-connector-python
+**If you see "mysql-connector-python not installed":**
 - Rebuild the Docker image: `docker compose build app`
-- This should install all required dependencies
+- The latest code includes this dependency
+
+**If you see "Failed to connect to database":**
+- Check MySQL is running: `docker compose ps mysql`
+- Check the logs: `docker compose logs mysql`
+- Verify the connection settings in docker-compose.yml
+
+**If you see "Failed to initialize database schema":**
+- Run the setup script: `docker compose run --rm app python setup_database.py`
+- Check for permission errors in MySQL logs
+
+**Common fix - Rebuild and setup:**
+```bash
+# Rebuild with latest changes
+docker compose build app
+
+# Start services
+docker compose up -d
+
+# Initialize database
+docker compose run --rm app python setup_database.py
+
+# Enable indexing in docker-compose.yml
+# Set: INDEX_TO_DATABASE=true
+
+# Restart
+docker compose restart app
+```
 
 ## Switching Back to Download Mode
 
