@@ -54,6 +54,7 @@ async def async_main() -> None:
             config.max_retry_time,
             config.format,
             config.format_sort,
+            config.index_to_database,
         )
     else:
         command = internal_player.play_episode(
