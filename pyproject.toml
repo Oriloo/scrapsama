@@ -43,6 +43,9 @@ cli = [
     "tomli>=2.2.1 ; python_full_version < '3.11'",
     "yt-dlp>=2025.7.21",
 ]
+database = [
+    "mysql-connector-python>=9.1.0",
+]
 
 [dependency-groups]
 dev = [
