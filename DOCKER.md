@@ -56,6 +56,22 @@ This project includes a Docker Compose setup with:
    docker-compose run --rm app anime-sama
    ```
 
+4. **Enable Database Indexing (Optional):**
+   
+   To index video links instead of downloading:
+   
+   ```bash
+   # Initialize the database schema
+   docker compose run --rm app python setup_database.py
+   
+   # Enable indexing by editing docker-compose.yml
+   # Change: INDEX_TO_DATABASE=false
+   # To:     INDEX_TO_DATABASE=true
+   
+   # Or run with indexing enabled without modifying files:
+   docker compose run --rm -e INDEX_TO_DATABASE=true app anime-sama
+   ```
+
 ## Services Configuration
 
 ### MySQL Database
@@ -75,6 +91,41 @@ This project includes a Docker Compose setup with:
 - **Container name**: `animesama_app`
 - **Config directory**: Mounted to persist configuration
 - **Downloads directory**: `/app/downloads` (mounted as volume)
+- **Database indexing**: Set `INDEX_TO_DATABASE=true` to store video links in MySQL instead of downloading
+
+## Database Indexing Feature
+
+The application can index video links in the MySQL database instead of downloading them. This is useful for:
+- Cataloging available anime episodes and their sources
+- Building a searchable database of anime content
+- Tracking available streaming sources without consuming disk space
+
+To enable this feature:
+
+1. **Initialize the database schema:**
+   ```bash
+   docker compose run --rm app python setup_database.py
+   ```
+
+2. **Enable indexing** by setting the environment variable in `docker-compose.yml`:
+   ```yaml
+   environment:
+     - INDEX_TO_DATABASE=true
+   ```
+
+3. **Restart the application:**
+   ```bash
+   docker compose restart app
+   ```
+
+4. **Use the CLI as normal** - videos will be indexed instead of downloaded:
+   ```bash
+   docker compose run --rm app anime-sama
+   ```
+
+5. **View indexed data** using phpMyAdmin at http://localhost:8080
+
+For more information, see [DATABASE.md](DATABASE.md).
 
 ## Common Commands
 

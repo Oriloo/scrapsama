@@ -127,5 +127,9 @@ config_dict["database"] = DatabaseConfig(
     password=os.getenv("DB_PASSWORD", config_dict.get("database", {}).get("password", "animesama_password")),
 )
 
+# Handle index_to_database flag - environment variable overrides config file
+if os.getenv("INDEX_TO_DATABASE") is not None:
+    config_dict["index_to_database"] = os.getenv("INDEX_TO_DATABASE", "false").lower() in ("true", "1", "yes")
+
 config = Config(**config_dict)
 del config_dict

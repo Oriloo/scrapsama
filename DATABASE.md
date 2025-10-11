@@ -117,11 +117,18 @@ The project includes a Docker Compose configuration with MySQL and phpMyAdmin:
 # Start all services
 docker compose up -d
 
-# Initialize database
+# Initialize database schema
 docker compose run --rm app python setup_database.py
 
-# Run anime-sama with database indexing
-docker compose run --rm app anime-sama
+# Enable indexing by setting environment variable in docker-compose.yml:
+# Change: INDEX_TO_DATABASE=false
+# To:     INDEX_TO_DATABASE=true
+
+# Or set it temporarily:
+docker compose run --rm -e INDEX_TO_DATABASE=true app anime-sama
+
+# Restart services to apply changes
+docker compose restart app
 ```
 
 Access phpMyAdmin at http://localhost:8080 to view your indexed data.
