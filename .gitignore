@@ -14,3 +14,7 @@ wheels/
 
 # IDE
 .vscode
+
+# Docker
+.env
+docker-compose.override.yml

@@ -1,0 +1,40 @@
+# Docker Compose Override Example
+# 
+# This file shows how to customize the Docker setup without modifying
+# the main docker-compose.yml file.
+#
+# To use this file:
+# 1. Copy this file to docker-compose.override.yml
+# 2. Modify the values as needed
+# 3. Run: docker compose up -d
+#
+# Docker Compose will automatically merge docker-compose.yml with
+# docker-compose.override.yml
+
+services:
+  mysql:
+    # Custom MySQL configuration
+    environment:
+      MYSQL_ROOT_PASSWORD: your_custom_root_password
+      MYSQL_DATABASE: your_custom_db_name
+      MYSQL_USER: your_custom_user
+      MYSQL_PASSWORD: your_custom_password
+    # Use a different port if 3306 is already in use
+    # ports:
+    #   - "3307:3306"
+
+  phpmyadmin:
+    # Use a different port if 8080 is already in use
+    # ports:
+    #   - "8081:80"
+    environment:
+      PMA_PASSWORD: your_custom_root_password
+
+  app:
+    # Custom application environment variables
+    environment:
+      DB_PASSWORD: your_custom_password
+      # Add any custom environment variables here
+    # Mount additional volumes
+    # volumes:
+    #   - ./custom_config:/root/.config/anime-sama_cli
