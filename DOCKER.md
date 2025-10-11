@@ -5,6 +5,26 @@ This project includes a Docker Compose setup with:
 - **MySQL 8.0** Database
 - **phpMyAdmin** for database management
 
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────┐
+│                Docker Network                        │
+│                (animesama_network)                   │
+│                                                      │
+│  ┌──────────────┐   ┌──────────────┐   ┌─────────┐ │
+│  │  Anime-Sama  │   │    MySQL     │   │phpMyAdmin│ │
+│  │     App      │◄──┤   Database   │◄──┤          │ │
+│  │  (Python)    │   │    :3306     │   │  :8080   │ │
+│  └──────────────┘   └──────────────┘   └─────────┘ │
+│         │                   │                        │
+│    ┌────▼────┐         ┌───▼────┐                  │
+│    │Downloads│         │MySQL   │                   │
+│    │ Volume  │         │ Data   │                   │
+│    └─────────┘         └────────┘                   │
+└─────────────────────────────────────────────────────┘
+```
+
 ## Prerequisites
 
 - Docker
