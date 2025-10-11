@@ -52,6 +52,8 @@ services:
       - DB_NAME=animesama_db
       - DB_USER=animesama_user
       - DB_PASSWORD=animesama_password
+      # Set to "true" to index video links instead of downloading
+      - INDEX_TO_DATABASE=true
     volumes:
       - ./anime_sama_api:/app/anime_sama_api
       - app_config:/root/.config/anime-sama_cli
