@@ -18,6 +18,15 @@ And to run it:
 anime-sama
 ```
 
+## Docker Installation
+For a complete setup with MySQL and phpMyAdmin, see [DOCKER.md](DOCKER.md).
+
+Quick start:
+```bash
+docker compose up -d
+docker compose run --rm app anime-sama
+```
+
 ## Configuration
 You can customize the config at `~/.config/anime-sama_cli/config.toml` for macOS/Linux and at `%USER%/AppData/Local/anime-sama_cli/config.toml` for Windows.
 

@@ -1,0 +1,74 @@
+services:
+  # MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: animesama_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: animesama_db
+      MYSQL_USER: animesama_user
+      MYSQL_PASSWORD: animesama_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - animesama_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # phpMyAdmin Service
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: animesama_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+      UPLOAD_LIMIT: 300M
+    ports:
+      - "8080:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - animesama_network
+
+  # Anime-Sama API Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: animesama_app
+    restart: unless-stopped
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=animesama_db
+      - DB_USER=animesama_user
+      - DB_PASSWORD=animesama_password
+    volumes:
+      - ./anime_sama_api:/app/anime_sama_api
+      - app_config:/root/.config/anime-sama_cli
+      - downloads:/app/downloads
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - animesama_network
+    stdin_open: true
+    tty: true
+
+networks:
+  animesama_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  app_config:
+  downloads:
