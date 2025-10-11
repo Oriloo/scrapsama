@@ -27,6 +27,12 @@ docker compose up -d
 docker compose run --rm app anime-sama
 ```
 
+Or using Make:
+```bash
+make up
+make run
+```
+
 ## Configuration
 You can customize the config at `~/.config/anime-sama_cli/config.toml` for macOS/Linux and at `%USER%/AppData/Local/anime-sama_cli/config.toml` for Windows.
 

@@ -14,7 +14,12 @@ This project includes a Docker Compose setup with:
 
 1. **Build and start all services:**
    ```bash
-   docker-compose up -d
+   docker compose up -d
+   ```
+   
+   Or using the included Makefile:
+   ```bash
+   make up
    ```
 
 2. **Access the services:**
@@ -52,6 +57,20 @@ This project includes a Docker Compose setup with:
 - **Downloads directory**: `/app/downloads` (mounted as volume)
 
 ## Common Commands
+
+### Using Make (Recommended)
+The project includes a Makefile with convenient shortcuts:
+```bash
+make help      # Show all available commands
+make up        # Start all services
+make down      # Stop all services
+make logs      # View logs
+make run       # Run anime-sama CLI
+make db        # Connect to MySQL database
+make status    # Show service status
+```
+
+### Using Docker Compose Directly
 
 ### Start services
 ```bash
@@ -102,6 +121,14 @@ The setup uses Docker volumes to persist data:
 - `downloads`: Downloaded anime files
 
 ## Customization
+
+### Using docker-compose.override.yml
+For easy customization without modifying the main configuration:
+```bash
+cp docker-compose.override.yml.example docker-compose.override.yml
+# Edit docker-compose.override.yml with your custom settings
+docker compose up -d
+```
 
 ### Change MySQL credentials
 Edit the environment variables in `docker-compose.yml` under the `mysql` and `phpmyadmin` services.
