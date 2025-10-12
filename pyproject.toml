@@ -33,6 +33,7 @@ dependencies = [
 
 [project.scripts]
 anime-sama = "anime_sama_api:main"
+anime-sama-index-series = "anime_sama_api.cli.index_series:main"
 
 [project.urls]
 Repository = "https://github.com/Sky-NiniKo/anime-sama_api/"

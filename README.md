@@ -3,7 +3,9 @@ This project is archive. I do not have the time to work on it anymore. I may mak
 # Anime-Sama API
 An API for anime-sama.fr, also provides a CLI to download videos.
 
-**New Feature:** Index video links in a MySQL database instead of downloading. See [DATABASE.md](DATABASE.md) for details.
+**New Features:** 
+- Index video links in a MySQL database instead of downloading. See [DATABASE.md](DATABASE.md) for details.
+- **Automatic series indexing**: Index all episodes of a series with a single command using `anime-sama-index-series`.
 
 I have implemented all the features I care about. This project is now in maintenance mode.
 

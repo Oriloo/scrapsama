@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+"""Index all episodes of a series to the database.
+
+This script automatically indexes all seasons and episodes of a given series
+to the database without any manual selection.
+"""
 import asyncio
 import logging
 import sys
@@ -6,10 +12,8 @@ from rich import get_console
 from rich.logging import RichHandler
 from rich.status import Status
 
-from . import downloader, internal_player
 from .config import config
-from .episode_extra_info import convert_with_extra_info
-from .utils import safe_input, select_one, select_range
+from .utils import safe_input, select_one
 
 from ..top_level import AnimeSama
 from ..database import Database, index_episode
@@ -23,14 +27,29 @@ def spinner(text: str) -> Status:
     return console.status(text, spinner_style="cyan")
 
 
-async def index_full_series(catalogue) -> None:
+async def index_full_series() -> None:
     """Index all seasons and episodes of a series to the database."""
+    query = safe_input("Series name: \033[0;34m", str)
+
+    with spinner(f"Searching for [blue]{query}"):
+        catalogues = await AnimeSama(config.url).search(query)
+    
+    if not catalogues:
+        console.print(f"[red]No series found for query: {query}[/]")
+        return
+    
+    catalogue = select_one(catalogues)
+    
     console.print(f"\n[cyan bold]Starting full series indexing for: {catalogue.name}[/]")
     
     # Initialize database connection
     db = Database()
     if not db.connect():
         console.print("[red]Failed to connect to database. Please check your configuration.[/]")
+        console.print("\nMake sure:")
+        console.print("  1. MySQL is running")
+        console.print("  2. Database credentials are correct")
+        console.print("  3. mysql-connector-python is installed: pip install mysql-connector-python")
         return
     
     if not db.initialize_schema():
@@ -86,66 +105,17 @@ async def index_full_series(catalogue) -> None:
     
     # Summary
     console.print(f"\n[cyan bold]Indexing Complete![/]")
+    console.print(f"Series: {catalogue.name}")
     console.print(f"Total episodes processed: {total_episodes}")
     console.print(f"Successfully indexed: {total_indexed}")
     if total_indexed < total_episodes:
         console.print(f"[yellow]Failed to index: {total_episodes - total_indexed}[/]")
 
 
-async def async_main() -> None:
-    # Check if --index-full flag is provided
-    index_full = "--index-full" in sys.argv
-    
-    query = safe_input("Anime name: \033[0;34m", str)
-
-    with spinner(f"Searching for [blue]{query}"):
-        catalogues = await AnimeSama(config.url).search(query)
-    catalogue = select_one(catalogues)
-    
-    # If --index-full flag is present, index the entire series
-    if index_full:
-        await index_full_series(catalogue)
-        return
-
-    with spinner(f"Getting season list for [blue]{catalogue.name}"):
-        seasons = await catalogue.seasons()
-    season = select_one(seasons)
-
-    with spinner(f"Getting episode list for [blue]{season.name}"):
-        episodes = await season.episodes()
-
-    console.print(f"\n[cyan bold underline]{season.serie_name} - {season.name}")
-    selected_episodes = select_range(
-        episodes, msg="Choose episode(s)", print_choices=True
-    )
-
-    if config.download:
-        downloader.multi_download(
-            [
-                convert_with_extra_info(episode, catalogue)
-                for episode in selected_episodes
-            ],
-            config.download_path,
-            config.episode_path,
-            config.concurrent_downloads,
-            config.prefer_languages,
-            config.players_config,
-            config.max_retry_time,
-            config.format,
-            config.format_sort,
-            config.index_to_database,
-        )
-    else:
-        command = internal_player.play_episode(
-            selected_episodes[0], config.prefer_languages
-        )
-        if command is not None:
-            command.wait()
-
-
 def main() -> int:
+    """Main entry point for the index-series script."""
     try:
-        asyncio.run(async_main())
+        asyncio.run(index_full_series())
     except (KeyboardInterrupt, asyncio.exceptions.CancelledError, EOFError):
         console.print("\n[red]Exiting...")
 
@@ -153,4 +123,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
