@@ -7,6 +7,7 @@ Instead of downloading anime videos, you can now index video links and episode i
 - Keep track of all episodes and their available languages
 - Query and manage your anime collection efficiently
 - Easily access player URLs when needed
+- **NEW**: Automatically index entire series with all seasons and episodes
 
 ## Requirements
 
@@ -20,6 +21,62 @@ pip install mysql-connector-python
 Or install with database support:
 ```bash
 pip install 'anime-sama-api[cli,database]'
+```
+
+## Automatic Series Indexing
+
+### New Command: `anime-sama-index-series`
+
+A new command-line tool has been added to automatically index all episodes of a series:
+
+```bash
+anime-sama-index-series
+```
+
+This command will:
+1. Prompt for a series name
+2. Search for the series
+3. Let you select from search results (if multiple matches)
+4. **Automatically process ALL seasons**
+5. **Automatically index ALL episodes** without manual selection
+6. Display progress for each season and episode
+7. Provide a summary of indexed episodes
+
+### Using the Flag with anime-sama
+
+You can also use the `--index-full` flag with the regular `anime-sama` command:
+
+```bash
+anime-sama --index-full
+```
+
+This will enable the automatic full-series indexing mode within the main CLI.
+
+### Example Usage
+
+```bash
+$ anime-sama-index-series
+Series name: one piece
+Searching for one piece...
+
+Starting full series indexing for: One Piece
+
+Getting all seasons for One Piece...
+Found 1 season(s)
+
+Processing season 1/1: Saison 1
+Getting episodes for Saison 1...
+Found 1122 episode(s)
+
+  ✓ [1/1122] Episode 1
+  ✓ [2/1122] Episode 2
+  ✓ [3/1122] Episode 3
+  ...
+
+Indexing Complete!
+Series: One Piece
+Total episodes processed: 1122
+Successfully indexed: 1122
 ```
 
 ## Configuration
