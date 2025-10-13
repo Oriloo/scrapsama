@@ -54,6 +54,7 @@ services:
       - DB_PASSWORD=animesama_password
     volumes:
       - ./anime_sama_api:/app/anime_sama_api
+      - ./init_db.py:/app/init_db.py
     depends_on:
       mysql:
         condition: service_healthy
