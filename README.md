@@ -10,6 +10,9 @@ Requirements:
 - Docker & Docker Compose
 
 ```bash
+# Build the Docker image (required after updates)
+docker compose build app
+
 # Start services (MySQL + phpMyAdmin)
 docker compose up -d
 
@@ -83,6 +86,27 @@ async def index_series(name):
     db.close()
 
 asyncio.run(index_series("one piece"))
+```
+
+## Troubleshooting
+
+### Command not found in Docker
+
+If you get an error like `executable file not found in $PATH` when running a command:
+
+```bash
+docker compose run --rm app scrapsama-index-all
+# Error: executable file not found in $PATH
+```
+
+This means the Docker image needs to be rebuilt to include the new commands:
+
+```bash
+# Rebuild the Docker image
+docker compose build app
+
+# Then run the command
+docker compose run --rm app scrapsama-index-all
 ```
 
 ## Database Schema
