@@ -1,10 +1,12 @@
 This project is archive. I do not have the time to work on it anymore. I may make some small fixes if a breaking issue arises. 
 
-# Anime-Sama API
-An API for anime-sama.fr, also provides a CLI to download videos.
+# Anime-Sama API - Series Indexing
 
-**New Features:** 
-- Index video links in a MySQL database instead of downloading. See [DATABASE.md](DATABASE.md) for details.
+An API for anime-sama.fr focused on indexing anime series information into a MySQL database.
+
+**Focus:** This codebase is dedicated to series indexing functionality - storing anime/manga series, seasons, episodes, and video links in a database.
+
+**Key Feature:** 
 - **Automatic series indexing**: Index all episodes of a series with a single command using `anime-sama-index-series`.
 
 I have implemented all the features I care about. This project is now in maintenance mode.
@@ -12,14 +14,15 @@ I have implemented all the features I care about. This project is now in mainten
 # Installation
 Requirements:
 - Python 3.10 or higher
+- MySQL 8.0+ (for database storage)
 
 You can simply install it with (note that you can use tools like pipx to isolate the installation):
 ```bash
-pip install anime-sama-api[cli]
+pip install anime-sama-api[cli,database]
 ```
 And to run it:
 ```bash
-anime-sama
+anime-sama-index-series
 ```
 
 ## Docker Installation
@@ -28,7 +31,7 @@ For a complete setup with MySQL and phpMyAdmin, see [DOCKER.md](DOCKER.md).
 Quick start:
 ```bash
 docker compose up -d
-docker compose run --rm app anime-sama
+docker compose run --rm app anime-sama-index-series
 ```
 
 Or using Make:
@@ -37,24 +40,21 @@ make up
 make run
 ```
 
-## Configuration
-You can customize the config at `~/.config/anime-sama_cli/config.toml` for macOS/Linux and at `%USER%/AppData/Local/anime-sama_cli/config.toml` for Windows.
-
 # For developers
 ## Requirements
 - git
-- [uv](https://docs.astral.sh/uv/#installation)
+- Python 3.10+
 
 ## Install locally
 ```bash
 git clone https://github.com/Sky-NiniKo/anime-sama_api.git
 cd anime-sama_downloader
-uv sync --extra cli
+pip install -e .[cli,database]
 ```
 
 ## Run
 ```bash
-uv run anime-sama
+anime-sama-index-series
 ```
 
 ## Update

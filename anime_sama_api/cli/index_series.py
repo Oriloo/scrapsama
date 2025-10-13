@@ -12,7 +12,6 @@ from rich import get_console
 from rich.logging import RichHandler
 from rich.status import Status
 
-from .config import config
 from .utils import safe_input, select_one
 
 from ..top_level import AnimeSama
@@ -32,7 +31,7 @@ async def index_full_series() -> None:
     query = safe_input("Series name: \033[0;34m", str)
 
     with spinner(f"Searching for [blue]{query}"):
-        catalogues = await AnimeSama(config.url).search(query)
+        catalogues = await AnimeSama("https://anime-sama.fr/").search(query)
     
     if not catalogues:
         console.print(f"[red]No series found for query: {query}[/]")
