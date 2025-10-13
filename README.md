@@ -4,6 +4,26 @@ API for indexing anime series from anime-sama.fr into a MySQL database.
 
 ## Installation
 
+### Option 1: Docker (Recommended)
+
+Requirements:
+- Docker & Docker Compose
+
+```bash
+# Start services (MySQL + phpMyAdmin)
+docker compose up -d
+
+# Initialize database schema
+docker compose run --rm app python init_db.py
+
+# Run indexer
+docker compose run --rm app anime-sama-index-series
+```
+
+Access phpMyAdmin at http://localhost:8080 (user: root, password: rootpassword)
+
+### Option 2: Local Installation
+
 Requirements:
 - Python 3.10+
 - MySQL 8.0+
