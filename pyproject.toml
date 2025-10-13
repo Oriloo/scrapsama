@@ -42,7 +42,6 @@ Repository = "https://github.com/Sky-NiniKo/anime-sama_api/"
 cli = [
     "rich>=14.1.0",
     "tomli>=2.2.1 ; python_full_version < '3.11'",
-    "yt-dlp>=2025.7.21",
 ]
 database = [
     "mysql-connector-python>=9.1.0",

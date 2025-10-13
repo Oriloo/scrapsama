@@ -24,7 +24,7 @@ COPY pyproject.toml ./
 COPY anime_sama_api ./anime_sama_api
 COPY README.md ./
 COPY LICENSE ./
-COPY setup_database.py ./
+COPY init_db.py ./
 
 # Install the package in development mode
 RUN pip install --no-cache-dir --no-deps -e .

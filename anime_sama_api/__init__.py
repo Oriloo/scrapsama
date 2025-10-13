@@ -6,8 +6,7 @@ from .langs import Lang, LangId, lang2ids, id2lang, flags
 from .database import Database, DatabaseConfig, index_episode
 
 try:
-    from .cli.__main__ import main
-    from .cli.downloader import download, multi_download
+    from .cli.index_series import main
 except ImportError:
     import sys
 
@@ -19,8 +18,6 @@ except ImportError:
         )
 
         sys.exit(1)
-
-    download = multi_download = main  # type: ignore
 
 
 # __package__ = "anime-sama_api"
@@ -36,8 +33,6 @@ __all__ = [
     "lang2ids",
     "id2lang",
     "flags",
-    "download",
-    "multi_download",
     "main",
     "Database",
     "DatabaseConfig",
