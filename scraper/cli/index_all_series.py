@@ -49,7 +49,7 @@ async def index_all_available_series() -> None:
         catalogues = await anime_sama.all_catalogues()
     
     if not catalogues:
-        console.print(f"[yellow]No series found[/]")
+        console.print("[yellow]No series found[/]")
         db.close()
         return
     
@@ -113,7 +113,7 @@ async def index_all_available_series() -> None:
     db.close()
     
     # Summary
-    console.print(f"\n[cyan bold]Indexing Complete![/]")
+    console.print("\n[cyan bold]Indexing Complete![/]")
     console.print(f"Total series processed: {total_series}")
     console.print(f"Total episodes processed: {total_episodes}")
     console.print(f"Successfully indexed: {total_indexed}")
