@@ -2,8 +2,8 @@
 """
 Demonstration script for database indexing feature.
 
-This script shows how to use the new database indexing functionality
-to store video links instead of downloading them.
+This script shows how to use the database indexing functionality
+to store video links and episode information.
 """
 import sys
 from pathlib import Path
@@ -72,7 +72,6 @@ def demo_basic_indexing():
         print("  1. Install: pip install mysql-connector-python")
         print("  2. Setup MySQL database")
         print("  3. Run: python setup_database.py")
-        print("  4. Set index_to_database = true in config.toml")
 
 
 def demo_config():
@@ -131,12 +130,11 @@ def demo_usage():
     print("Demo: Usage Examples")
     print("=" * 60)
     
-    print("\n1. Enable database indexing in CLI:")
-    print("   Edit ~/.config/anime-sama_cli/config.toml")
-    print("   Set: index_to_database = true")
-    print("\n2. Run anime-sama as normal:")
+    print("\n1. Use the indexing CLI:")
+    print("   $ anime-sama-index-series")
+    print("\n2. Or use the main command:")
     print("   $ anime-sama")
-    print("\n3. Videos will be indexed instead of downloaded")
+    print("\n3. Videos will be indexed to the database")
     
     print("\n\nProgrammatic Usage:")
     print("""

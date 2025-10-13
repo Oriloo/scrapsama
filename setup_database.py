@@ -55,9 +55,8 @@ def main():
     db.close()
     
     print("\n=== Setup Complete ===")
-    print("\nYou can now enable database indexing in your config:")
-    print("  ~/.config/anime-sama_cli/config.toml")
-    print("\nSet: index_to_database = true")
+    print("\nThe database is ready for series indexing.")
+    print("Run: anime-sama-index-series")
     
     return 0
 
