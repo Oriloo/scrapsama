@@ -21,7 +21,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
 COPY pyproject.toml ./
-COPY anime_sama_api ./anime_sama_api
+COPY scraper ./scraper
 COPY README.md ./
 COPY LICENSE ./
 COPY init_db.py ./
@@ -30,7 +30,7 @@ COPY init_db.py ./
 RUN pip install --no-cache-dir --no-deps -e .
 
 # Create config directory
-RUN mkdir -p /root/.config/anime-sama_cli
+RUN mkdir -p /root/.config/scrapsama_cli
 
 # Set default command
-CMD ["anime-sama"]
+CMD ["scrapsama"]
