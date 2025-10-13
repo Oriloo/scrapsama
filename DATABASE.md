@@ -2,12 +2,12 @@
 
 ## Overview
 
-Instead of downloading anime videos, you can now index video links and episode information in a MySQL database. This allows you to:
-- Store video URLs without downloading
+This project indexes anime video links and episode information in a MySQL database. This allows you to:
+- Store video URLs for later use
 - Keep track of all episodes and their available languages
 - Query and manage your anime collection efficiently
 - Easily access player URLs when needed
-- **NEW**: Automatically index entire series with all seasons and episodes
+- **Automatically index entire series with all seasons and episodes**
 
 ## Requirements
 
@@ -42,15 +42,15 @@ This command will:
 6. Display progress for each season and episode
 7. Provide a summary of indexed episodes
 
-### Using the Flag with anime-sama
+### Using the Main CLI
 
-You can also use the `--index-full` flag with the regular `anime-sama` command:
+You can also use the main `anime-sama` command which now redirects to indexing:
 
 ```bash
-anime-sama --index-full
+anime-sama
 ```
 
-This will enable the automatic full-series indexing mode within the main CLI.
+This will start the series indexing process.
 
 ### Example Usage
 
@@ -108,15 +108,7 @@ user = "animesama_user"
 password = "animesama_password"
 ```
 
-### 2. Enable Database Indexing
-
-In your `config.toml`, set:
-
-```toml
-index_to_database = true
-```
-
-### 3. Initialize Database Schema
+### 2. Initialize Database Schema
 
 Run the setup script to create the necessary tables:
 
@@ -154,17 +146,20 @@ The feature creates two tables:
 
 ## Usage
 
-Once configured and enabled, simply use anime-sama as normal:
+Once configured, use the indexing commands:
 
 ```bash
+anime-sama-index-series
+# or
 anime-sama
 ```
 
-Instead of downloading videos, the application will:
+The application will:
 1. Search for the anime
-2. Select episodes
-3. Index the video links and episode information in the database
-4. Log the indexing results
+2. Select the series from search results
+3. Automatically index all seasons and episodes
+4. Store video links and episode information in the database
+5. Display progress and summary
 
 ## Docker Setup
 
@@ -177,15 +172,11 @@ docker compose up -d
 # Initialize database schema
 docker compose run --rm app python setup_database.py
 
-# Enable indexing by setting environment variable in docker-compose.yml:
-# Change: INDEX_TO_DATABASE=false
-# To:     INDEX_TO_DATABASE=true
+# Run the indexing tool
+docker compose run --rm app anime-sama-index-series
 
-# Or set it temporarily:
-docker compose run --rm -e INDEX_TO_DATABASE=true app anime-sama
-
-# Restart services to apply changes
-docker compose restart app
+# Or use the main command
+docker compose run --rm app anime-sama
 ```
 
 Access phpMyAdmin at http://localhost:8080 to view your indexed data.
@@ -237,24 +228,6 @@ python setup_database.py
 ### Environment Variables Not Working
 
 Environment variables take precedence over config file settings. If using Docker, make sure they're defined in `docker-compose.yml`.
-
-## Switching Between Download and Index Modes
-
-You can toggle between downloading and indexing by changing the config:
-
-```toml
-# Download videos
-download = true
-index_to_database = false
-
-# Index to database
-download = true
-index_to_database = true
-
-# Play videos without downloading or indexing
-download = false
-index_to_database = false
-```
 
 ## API Usage
 
