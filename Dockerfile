@@ -26,8 +26,8 @@ COPY README.md ./
 COPY LICENSE ./
 COPY init_db.py ./
 
-# Install the package in development mode
-RUN pip install --no-cache-dir --no-deps -e .
+# Install the package in development mode (without --no-deps to ensure console scripts are created)
+RUN pip install --no-cache-dir -e .
 
 # Create config directory
 RUN mkdir -p /root/.config/scrapsama_cli
