@@ -1,4 +1,4 @@
-# Anime-Sama Indexer
+# Scrapsama Indexer
 
 API for indexing anime series from anime-sama.fr into a MySQL database.
 
@@ -17,7 +17,7 @@ docker compose up -d
 docker compose run --rm app python init_db.py
 
 # Run indexer
-docker compose run --rm app anime-sama-index-series
+docker compose run --rm app scrapsama-index
 ```
 
 Access phpMyAdmin at http://localhost:8080 (user: root, password: rootpassword)
@@ -40,9 +40,9 @@ Set database connection via environment variables:
 ```bash
 export DB_HOST=localhost
 export DB_PORT=3306
-export DB_NAME=animesama_db
-export DB_USER=animesama_user
-export DB_PASSWORD=animesama_password
+export DB_NAME=scrapsama_db
+export DB_USER=scrapsama_user
+export DB_PASSWORD=scrapsama_password
 ```
 
 ## Usage
@@ -51,14 +51,14 @@ export DB_PASSWORD=animesama_password
 
 ```bash
 # Index a full series
-anime-sama-index-series
+scrapsama-index
 ```
 
 ### Python API
 
 ```python
 import asyncio
-from anime_sama_api import AnimeSama, Database, index_episode
+from scraper import AnimeSama, Database, index_episode
 
 async def index_series(name):
     # Search series

@@ -2,19 +2,19 @@ services:
   # MySQL Database Service
   mysql:
     image: mysql:8.0
-    container_name: animesama_mysql
+    container_name: scrapsama_mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: animesama_db
-      MYSQL_USER: animesama_user
-      MYSQL_PASSWORD: animesama_password
+      MYSQL_DATABASE: scrapsama_db
+      MYSQL_USER: scrapsama_user
+      MYSQL_PASSWORD: scrapsama_password
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
-      - animesama_network
+      - scrapsama_network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
@@ -23,7 +23,7 @@ services:
   # phpMyAdmin Service
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
-    container_name: animesama_phpmyadmin
+    container_name: scrapsama_phpmyadmin
     restart: unless-stopped
     environment:
       PMA_HOST: mysql
@@ -37,34 +37,34 @@ services:
       mysql:
         condition: service_healthy
     networks:
-      - animesama_network
+      - scrapsama_network
 
-  # Anime-Sama API Application
+  # Scrapsama API Application
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: animesama_app
+    container_name: scrapsama_app
     restart: unless-stopped
     environment:
       - DB_HOST=mysql
       - DB_PORT=3306
-      - DB_NAME=animesama_db
-      - DB_USER=animesama_user
-      - DB_PASSWORD=animesama_password
+      - DB_NAME=scrapsama_db
+      - DB_USER=scrapsama_user
+      - DB_PASSWORD=scrapsama_password
     volumes:
-      - ./anime_sama_api:/app/anime_sama_api
+      - ./scraper:/app/scraper
       - ./init_db.py:/app/init_db.py
     depends_on:
       mysql:
         condition: service_healthy
     networks:
-      - animesama_network
+      - scrapsama_network
     stdin_open: true
     tty: true
 
 networks:
-  animesama_network:
+  scrapsama_network:
     driver: bridge
 
 volumes:

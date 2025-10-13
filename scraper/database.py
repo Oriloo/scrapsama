@@ -13,9 +13,9 @@ class DatabaseConfig:
     """Configuration for database connection."""
     host: str = "localhost"
     port: int = 3306
-    database: str = "animesama_db"
-    user: str = "animesama_user"
-    password: str = "animesama_password"
+    database: str = "scrapsama_db"
+    user: str = "scrapsama_user"
+    password: str = "scrapsama_password"
 
     @classmethod
     def from_env(cls) -> "DatabaseConfig":
@@ -23,9 +23,9 @@ class DatabaseConfig:
         return cls(
             host=os.getenv("DB_HOST", "localhost"),
             port=int(os.getenv("DB_PORT", "3306")),
-            database=os.getenv("DB_NAME", "animesama_db"),
-            user=os.getenv("DB_USER", "animesama_user"),
-            password=os.getenv("DB_PASSWORD", "animesama_password"),
+            database=os.getenv("DB_NAME", "scrapsama_db"),
+            user=os.getenv("DB_USER", "scrapsama_user"),
+            password=os.getenv("DB_PASSWORD", "scrapsama_password"),
         )
 
 

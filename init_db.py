@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Initialize database schema for anime-sama indexing."""
+"""Initialize database schema for scrapsama indexing."""
 import sys
-from anime_sama_api.database import Database
+from scraper.database import Database
 
 def main():
     """Initialize the database schema."""
