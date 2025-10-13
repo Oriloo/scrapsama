@@ -1,67 +1,75 @@
-This project is archive. I do not have the time to work on it anymore. I may make some small fixes if a breaking issue arises. 
+# Anime-Sama Indexer
 
-# Anime-Sama API - Series Indexing
+API for indexing anime series from anime-sama.fr into a MySQL database.
 
-An API for anime-sama.fr focused on indexing anime series information into a MySQL database.
+## Installation
 
-**Focus:** This codebase is dedicated to series indexing functionality - storing anime/manga series, seasons, episodes, and video links in a database.
-
-**Key Feature:** 
-- **Automatic series indexing**: Index all episodes of a series with a single command using `anime-sama-index-series`.
-
-I have implemented all the features I care about. This project is now in maintenance mode.
-
-# Installation
 Requirements:
-- Python 3.10 or higher
-- MySQL 8.0+ (for database storage)
-
-You can simply install it with (note that you can use tools like pipx to isolate the installation):
-```bash
-pip install anime-sama-api[cli,database]
-```
-And to run it:
-```bash
-anime-sama-index-series
-```
-
-## Docker Installation
-For a complete setup with MySQL and phpMyAdmin, see [DOCKER.md](DOCKER.md).
-
-Quick start:
-```bash
-docker compose up -d
-docker compose run --rm app anime-sama-index-series
-```
-
-Or using Make:
-```bash
-make up
-make run
-```
-
-# For developers
-## Requirements
-- git
 - Python 3.10+
+- MySQL 8.0+
 
-## Install locally
 ```bash
-git clone https://github.com/Sky-NiniKo/anime-sama_api.git
-cd anime-sama_downloader
-pip install -e .[cli,database]
+pip install -e .
+pip install mysql-connector-python rich
 ```
 
-## Run
+## Configuration
+
+Set database connection via environment variables:
+
 ```bash
+export DB_HOST=localhost
+export DB_PORT=3306
+export DB_NAME=animesama_db
+export DB_USER=animesama_user
+export DB_PASSWORD=animesama_password
+```
+
+## Usage
+
+### CLI
+
+```bash
+# Index a full series
 anime-sama-index-series
 ```
 
-## Update
-In the `anime_sama` folder:
-```bash
-git pull
+### Python API
+
+```python
+import asyncio
+from anime_sama_api import AnimeSama, Database, index_episode
+
+async def index_series(name):
+    # Search series
+    anime_sama = AnimeSama("https://anime-sama.fr/")
+    catalogues = await anime_sama.search(name)
+    
+    # Initialize database
+    db = Database()
+    db.connect()
+    db.initialize_schema()
+    
+    # Index all seasons and episodes
+    seasons = await catalogues[0].seasons()
+    for season in seasons:
+        episodes = await season.episodes()
+        for episode in episodes:
+            index_episode(episode, db)
+    
+    db.close()
+
+asyncio.run(index_series("one piece"))
 ```
 
-## Contribution
-I am open to contribution. Please only open a PR for ONE change. AKA, don't do "Various improvements" and explain your motivation behind your improvement ("Various typos fix"/"Cleanup" is fine).
+## Database Schema
+
+**episodes table:**
+- serie_name, season_name, episode_name, episode_index, season_number
+
+**players table:**
+- episode_id, language, player_url, player_hostname
+
+## License
+
+GPL-3.0
