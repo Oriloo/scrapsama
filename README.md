@@ -50,8 +50,11 @@ export DB_PASSWORD=scrapsama_password
 ### CLI
 
 ```bash
-# Index a full series
+# Index a specific series (prompts for series name)
 scrapsama-index
+
+# Index all available series from anime-sama.fr
+scrapsama-index-all
 ```
 
 ### Python API
