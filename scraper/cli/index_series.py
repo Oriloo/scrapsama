@@ -80,6 +80,8 @@ async def index_full_series() -> None:
     
     if not seasons:
         console.print(f"[yellow]No seasons found for {catalogue.name}[/]")
+        db.log_failure("series", catalogue.name, "No seasons found", 
+                      f"The series {catalogue.name} has no seasons available", serie_id)
         db.close()
         return
     
