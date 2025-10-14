@@ -15,7 +15,7 @@ from rich.status import Status
 from .utils import safe_input, select_one
 
 from ..top_level import AnimeSama
-from ..database import Database, index_episode
+from ..database import Database, index_episode, index_serie, index_season
 
 console = get_console()
 console._highlight = False
@@ -56,12 +56,32 @@ async def index_full_series() -> None:
         db.close()
         return
     
+    # Index the series first
+    with spinner(f"Indexing series [blue]{catalogue.name}"):
+        serie_id = index_serie(catalogue, db)
+    
+    if not serie_id:
+        console.print(f"[red]Failed to index series: {catalogue.name}[/]")
+        db.close()
+        return
+    
+    console.print(f"[green]✓ Series indexed (ID: {serie_id})[/]")
+    
     # Get all seasons
     with spinner(f"Getting all seasons for [blue]{catalogue.name}"):
-        seasons = await catalogue.seasons()
+        try:
+            seasons = await catalogue.seasons()
+        except Exception as e:
+            error_msg = str(e)
+            console.print(f"[red]Error getting seasons: {error_msg}[/]")
+            db.log_failure("series", catalogue.name, "Failed to get seasons", error_msg, serie_id)
+            db.close()
+            return
     
     if not seasons:
         console.print(f"[yellow]No seasons found for {catalogue.name}[/]")
+        db.log_failure("series", catalogue.name, "No seasons found", 
+                      f"The series {catalogue.name} has no seasons available", serie_id)
         db.close()
         return
     
@@ -74,11 +94,22 @@ async def index_full_series() -> None:
     for season_num, season in enumerate(seasons, 1):
         console.print(f"\n[cyan]Processing season {season_num}/{len(seasons)}: {season.name}[/]")
         
+        # Index the season
+        season_id = index_season(season, serie_id, db)
+        if not season_id:
+            console.print(f"[red]Failed to index season: {season.name}[/]")
+            continue
+        
+        console.print(f"[green]✓ Season indexed (ID: {season_id})[/]")
+        
         with spinner(f"Getting episodes for [blue]{season.name}"):
             try:
                 episodes = await season.episodes()
             except Exception as e:
-                console.print(f"[red]Error getting episodes for {season.name}: {e}[/]")
+                error_msg = str(e)
+                console.print(f"[red]Error getting episodes for {season.name}: {error_msg}[/]")
+                db.log_failure("season", f"{catalogue.name} - {season.name}", 
+                              "Failed to get episodes", error_msg, season_id)
                 continue
         
         if not episodes:
@@ -91,7 +122,7 @@ async def index_full_series() -> None:
         for episode_num, episode in enumerate(episodes, 1):
             total_episodes += 1
             try:
-                success = index_episode(episode, db)
+                success = index_episode(episode, season_id, db)
                 if success:
                     total_indexed += 1
                     console.print(f"  [green]✓[/] [{episode_num}/{len(episodes)}] {episode.name}")
@@ -103,7 +134,7 @@ async def index_full_series() -> None:
     db.close()
     
     # Summary
-    console.print(f"\n[cyan bold]Indexing Complete![/]")
+    console.print("\n[cyan bold]Indexing Complete![/]")
     console.print(f"Series: {catalogue.name}")
     console.print(f"Total episodes processed: {total_episodes}")
     console.print(f"Successfully indexed: {total_indexed}")

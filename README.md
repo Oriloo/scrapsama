@@ -64,24 +64,29 @@ scrapsama-index-all
 
 ```python
 import asyncio
-from scraper import AnimeSama, Database, index_episode
+from scraper import AnimeSama, Database, index_serie, index_season, index_episode
 
 async def index_series(name):
     # Search series
     anime_sama = AnimeSama("https://anime-sama.fr/")
     catalogues = await anime_sama.search(name)
+    catalogue = catalogues[0]
     
     # Initialize database
     db = Database()
     db.connect()
     db.initialize_schema()
     
+    # Index the series
+    serie_id = index_serie(catalogue, db)
+    
     # Index all seasons and episodes
-    seasons = await catalogues[0].seasons()
+    seasons = await catalogue.seasons()
     for season in seasons:
+        season_id = index_season(season, serie_id, db)
         episodes = await season.episodes()
         for episode in episodes:
-            index_episode(episode, db)
+            index_episode(episode, season_id, db)
     
     db.close()
 
@@ -111,11 +116,42 @@ docker compose run --rm app scrapsama-index-all
 
 ## Database Schema
 
+The database consists of 5 main tables:
+
+**series table:**
+- id (PRIMARY KEY)
+- name, url
+- alternative_names, genres, categories, languages (JSON)
+- image_url, advancement, correspondence, synopsis
+- is_mature (boolean)
+- created_at, updated_at
+
+**seasons table:**
+- id (PRIMARY KEY)
+- serie_id (FOREIGN KEY → series.id)
+- name, url
+- created_at, updated_at
+
 **episodes table:**
+- id (PRIMARY KEY)
+- season_id (FOREIGN KEY → seasons.id)
 - serie_name, season_name, episode_name, episode_index, season_number
+- created_at, updated_at
 
 **players table:**
-- episode_id, language, player_url, player_hostname
+- id (PRIMARY KEY)
+- episode_id (FOREIGN KEY → episodes.id)
+- language, player_url, player_hostname, player_order
+- created_at
+
+**failures table:**
+- id (PRIMARY KEY)
+- entity_type (series, season, episode, player)
+- entity_name, entity_id
+- error_message, error_details
+- created_at
+
+The failures table logs all indexing failures to help identify issues during the indexing process.
 
 ## License
 

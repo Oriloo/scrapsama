@@ -3,7 +3,6 @@ import logging
 import os
 from dataclasses import dataclass
 from typing import Optional
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -71,10 +70,47 @@ class Database:
             
         cursor = self._connection.cursor()
         try:
+            # Create series table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS series (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    url TEXT NOT NULL,
+                    alternative_names TEXT,
+                    genres TEXT,
+                    categories TEXT,
+                    languages TEXT,
+                    image_url TEXT,
+                    advancement TEXT,
+                    correspondence TEXT,
+                    synopsis TEXT,
+                    is_mature BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY unique_serie (name)
+                )
+            """)
+            
+            # Create seasons table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS seasons (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    serie_id INT NOT NULL,
+                    name VARCHAR(255) NOT NULL,
+                    url TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (serie_id) REFERENCES series(id) ON DELETE CASCADE,
+                    INDEX idx_serie (serie_id),
+                    UNIQUE KEY unique_season (serie_id, name)
+                )
+            """)
+            
             # Create episodes table
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS episodes (
                     id INT AUTO_INCREMENT PRIMARY KEY,
+                    season_id INT NOT NULL,
                     serie_name VARCHAR(255) NOT NULL,
                     season_name VARCHAR(255) NOT NULL,
                     episode_name VARCHAR(255) NOT NULL,
@@ -82,10 +118,11 @@ class Database:
                     season_number INT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (season_id) REFERENCES seasons(id) ON DELETE CASCADE,
+                    INDEX idx_season (season_id),
                     INDEX idx_serie (serie_name),
-                    INDEX idx_season (season_name),
                     INDEX idx_episode (episode_name),
-                    UNIQUE KEY unique_episode (serie_name, season_name, episode_index)
+                    UNIQUE KEY unique_episode (season_id, episode_index)
                 )
             """)
             
@@ -105,6 +142,22 @@ class Database:
                 )
             """)
             
+            # Create failures table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS failures (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    entity_type ENUM('series', 'season', 'episode', 'player') NOT NULL,
+                    entity_name VARCHAR(255) NOT NULL,
+                    entity_id INT,
+                    error_message TEXT NOT NULL,
+                    error_details TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_entity_type (entity_type),
+                    INDEX idx_entity_name (entity_name),
+                    INDEX idx_created_at (created_at)
+                )
+            """)
+            
             self._connection.commit()
             logger.info("Database schema initialized successfully")
             return True
@@ -112,6 +165,129 @@ class Database:
             logger.error(f"Failed to initialize database schema: {e}")
             self._connection.rollback()
             return False
+        finally:
+            cursor.close()
+    
+    def save_serie(self, serie_data: dict) -> Optional[int]:
+        """Save series information to database.
+        
+        Args:
+            serie_data: Dictionary containing series information
+            
+        Returns:
+            Series ID if successful, None otherwise
+        """
+        if not self._connection:
+            return None
+            
+        cursor = self._connection.cursor()
+        try:
+            # Convert lists/sets to JSON strings for storage
+            import json
+            alternative_names = json.dumps(serie_data.get("alternative_names", []))
+            genres = json.dumps(serie_data.get("genres", []))
+            categories = json.dumps(list(serie_data.get("categories", [])))
+            languages = json.dumps(list(serie_data.get("languages", [])))
+            
+            # Insert or update series
+            cursor.execute("""
+                INSERT INTO series 
+                (name, url, alternative_names, genres, categories, languages, image_url, 
+                 advancement, correspondence, synopsis, is_mature)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE 
+                    url = VALUES(url),
+                    alternative_names = VALUES(alternative_names),
+                    genres = VALUES(genres),
+                    categories = VALUES(categories),
+                    languages = VALUES(languages),
+                    image_url = VALUES(image_url),
+                    advancement = VALUES(advancement),
+                    correspondence = VALUES(correspondence),
+                    synopsis = VALUES(synopsis),
+                    is_mature = VALUES(is_mature),
+                    updated_at = CURRENT_TIMESTAMP
+            """, (
+                serie_data["name"],
+                serie_data["url"],
+                alternative_names,
+                genres,
+                categories,
+                languages,
+                serie_data.get("image_url", ""),
+                serie_data.get("advancement", ""),
+                serie_data.get("correspondence", ""),
+                serie_data.get("synopsis", ""),
+                serie_data.get("is_mature", False),
+            ))
+            
+            # Get the series ID
+            cursor.execute("""
+                SELECT id FROM series WHERE name = %s
+            """, (serie_data["name"],))
+            
+            result = cursor.fetchone()
+            serie_id = result[0] if result else None
+            
+            self._connection.commit()
+            logger.info(f"Saved series: {serie_data['name']} (ID: {serie_id})")
+            return serie_id
+            
+        except Exception as e:
+            logger.error(f"Failed to save series: {e}")
+            self._connection.rollback()
+            return None
+        finally:
+            cursor.close()
+    
+    def save_season(self, season_data: dict) -> Optional[int]:
+        """Save season information to database.
+        
+        Args:
+            season_data: Dictionary containing season information
+            
+        Returns:
+            Season ID if successful, None otherwise
+        """
+        if not self._connection:
+            return None
+            
+        cursor = self._connection.cursor()
+        try:
+            # Insert or update season
+            cursor.execute("""
+                INSERT INTO seasons 
+                (serie_id, name, url)
+                VALUES (%s, %s, %s)
+                ON DUPLICATE KEY UPDATE 
+                    url = VALUES(url),
+                    updated_at = CURRENT_TIMESTAMP
+            """, (
+                season_data["serie_id"],
+                season_data["name"],
+                season_data["url"],
+            ))
+            
+            # Get the season ID
+            cursor.execute("""
+                SELECT id FROM seasons 
+                WHERE serie_id = %s AND name = %s
+            """, (
+                season_data["serie_id"],
+                season_data["name"],
+            ))
+            
+            result = cursor.fetchone()
+            season_id = result[0] if result else None
+            
+            self._connection.commit()
+            logger.info(f"Saved season: {season_data['name']} (ID: {season_id})")
+            return season_id
+            
+        except Exception as e:
+            logger.error(f"Failed to save season: {e}")
+            self._connection.rollback()
+            return None
         finally:
             cursor.close()
     
@@ -132,13 +308,14 @@ class Database:
             # Insert or update episode
             cursor.execute("""
                 INSERT INTO episodes 
-                (serie_name, season_name, episode_name, episode_index, season_number)
-                VALUES (%s, %s, %s, %s, %s)
+                (season_id, serie_name, season_name, episode_name, episode_index, season_number)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE 
                     episode_name = VALUES(episode_name),
                     season_number = VALUES(season_number),
                     updated_at = CURRENT_TIMESTAMP
             """, (
+                episode_data["season_id"],
                 episode_data["serie_name"],
                 episode_data["season_name"],
                 episode_data["episode_name"],
@@ -149,10 +326,9 @@ class Database:
             # Get the episode ID
             cursor.execute("""
                 SELECT id FROM episodes 
-                WHERE serie_name = %s AND season_name = %s AND episode_index = %s
+                WHERE season_id = %s AND episode_index = %s
             """, (
-                episode_data["serie_name"],
-                episode_data["season_name"],
+                episode_data["season_id"],
                 episode_data["episode_index"],
             ))
             
@@ -209,6 +385,48 @@ class Database:
         finally:
             cursor.close()
     
+    def log_failure(self, entity_type: str, entity_name: str, error_message: str, 
+                    error_details: str = "", entity_id: Optional[int] = None) -> bool:
+        """Log an indexing failure to the database.
+        
+        Args:
+            entity_type: Type of entity ('series', 'season', 'episode', 'player')
+            entity_name: Name/identifier of the entity that failed
+            error_message: Short error message
+            error_details: Detailed error information (optional)
+            entity_id: Database ID of the entity if available (optional)
+            
+        Returns:
+            True if logged successfully, False otherwise
+        """
+        if not self._connection:
+            return False
+            
+        cursor = self._connection.cursor()
+        try:
+            cursor.execute("""
+                INSERT INTO failures 
+                (entity_type, entity_name, entity_id, error_message, error_details)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (
+                entity_type,
+                entity_name,
+                entity_id,
+                error_message,
+                error_details,
+            ))
+            
+            self._connection.commit()
+            logger.info(f"Logged failure for {entity_type}: {entity_name} - {error_message}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to log failure: {e}")
+            self._connection.rollback()
+            return False
+        finally:
+            cursor.close()
+    
     def close(self):
         """Close database connection."""
         if self._connection:
@@ -216,11 +434,108 @@ class Database:
             logger.info("Database connection closed")
 
 
-def index_episode(episode, db: Optional[Database] = None) -> bool:
+def index_serie(catalogue, db: Optional[Database] = None) -> Optional[int]:
+    """Index a series (catalogue) in the database.
+    
+    Args:
+        catalogue: Catalogue object to index
+        db: Database instance. If None, creates a new one.
+        
+    Returns:
+        Series ID if successful, None otherwise
+    """
+    should_close = False
+    if db is None:
+        db = Database()
+        if not db.connect():
+            return None
+        if not db.initialize_schema():
+            db.close()
+            return None
+        should_close = True
+    
+    try:
+        # Prepare series data
+        serie_data = {
+            "name": catalogue.name,
+            "url": catalogue.url,
+            "alternative_names": list(catalogue.alternative_names) if catalogue.alternative_names else [],
+            "genres": list(catalogue.genres) if catalogue.genres else [],
+            "categories": catalogue.categories if catalogue.categories else set(),
+            "languages": catalogue.languages if catalogue.languages else set(),
+            "image_url": catalogue.image_url,
+        }
+        
+        # Save series
+        serie_id = db.save_serie(serie_data)
+        if serie_id:
+            logger.info(f"Successfully indexed series: {catalogue.name}")
+        
+        return serie_id
+        
+    except Exception as e:
+        error_msg = str(e)
+        logger.error(f"Failed to index series {catalogue.name}: {error_msg}")
+        db.log_failure("series", catalogue.name, "Failed to index series", error_msg)
+        return None
+    finally:
+        if should_close:
+            db.close()
+
+
+def index_season(season, serie_id: int, db: Optional[Database] = None) -> Optional[int]:
+    """Index a season in the database.
+    
+    Args:
+        season: Season object to index
+        serie_id: ID of the parent series
+        db: Database instance. If None, creates a new one.
+        
+    Returns:
+        Season ID if successful, None otherwise
+    """
+    should_close = False
+    if db is None:
+        db = Database()
+        if not db.connect():
+            return None
+        if not db.initialize_schema():
+            db.close()
+            return None
+        should_close = True
+    
+    try:
+        # Prepare season data
+        season_data = {
+            "serie_id": serie_id,
+            "name": season.name,
+            "url": season.url,
+        }
+        
+        # Save season
+        season_id = db.save_season(season_data)
+        if season_id:
+            logger.info(f"Successfully indexed season: {season.name}")
+        
+        return season_id
+        
+    except Exception as e:
+        error_msg = str(e)
+        logger.error(f"Failed to index season {season.name}: {error_msg}")
+        db.log_failure("season", f"{season.serie_name} - {season.name}", 
+                       "Failed to index season", error_msg, serie_id)
+        return None
+    finally:
+        if should_close:
+            db.close()
+
+
+def index_episode(episode, season_id: Optional[int] = None, db: Optional[Database] = None) -> bool:
     """Index an episode and its players in the database.
     
     Args:
         episode: Episode object to index
+        season_id: ID of the parent season (optional, will be looked up if not provided)
         db: Database instance. If None, creates a new one.
         
     Returns:
@@ -237,8 +552,32 @@ def index_episode(episode, db: Optional[Database] = None) -> bool:
         should_close = True
     
     try:
+        # If season_id not provided, try to look it up (for backward compatibility)
+        if season_id is None:
+            cursor = db._connection.cursor()
+            try:
+                cursor.execute("""
+                    SELECT s.id FROM seasons s
+                    JOIN series sr ON s.serie_id = sr.id
+                    WHERE sr.name = %s AND s.name = %s
+                    LIMIT 1
+                """, (episode.serie_name, episode.season_name))
+                result = cursor.fetchone()
+                season_id = result[0] if result else None
+            finally:
+                cursor.close()
+            
+            # If still not found, log error and return
+            if season_id is None:
+                error_msg = f"Season not found in database: {episode.serie_name} - {episode.season_name}"
+                logger.error(error_msg)
+                db.log_failure("episode", f"{episode.serie_name} - {episode.season_name} - {episode.name}", 
+                              "Season not found", error_msg)
+                return False
+        
         # Prepare episode data
         episode_data = {
+            "season_id": season_id,
             "serie_name": episode.serie_name,
             "season_name": episode.season_name,
             "episode_name": episode.name,
@@ -249,16 +588,39 @@ def index_episode(episode, db: Optional[Database] = None) -> bool:
         # Save episode
         episode_id = db.save_episode(episode_data)
         if not episode_id:
+            db.log_failure("episode", f"{episode.serie_name} - {episode.season_name} - {episode.name}",
+                          "Failed to save episode", "Database save operation failed", season_id)
             return False
         
         # Save players for each language
         for lang_id, players in episode.languages.items():
             if players:
-                db.save_players(episode_id, lang_id, list(players))
+                try:
+                    success = db.save_players(episode_id, lang_id, list(players))
+                    if not success:
+                        db.log_failure("player", 
+                                      f"{episode.serie_name} - {episode.name} - {lang_id}",
+                                      "Failed to save players", 
+                                      f"Failed to save {len(players)} players for language {lang_id}",
+                                      episode_id)
+                except Exception as e:
+                    error_msg = str(e)
+                    logger.error(f"Error saving players for {episode.name} ({lang_id}): {error_msg}")
+                    db.log_failure("player", 
+                                  f"{episode.serie_name} - {episode.name} - {lang_id}",
+                                  "Exception while saving players", 
+                                  error_msg,
+                                  episode_id)
         
         logger.info(f"Successfully indexed episode: {episode.name}")
         return True
         
+    except Exception as e:
+        error_msg = str(e)
+        logger.error(f"Failed to index episode {episode.name}: {error_msg}")
+        db.log_failure("episode", f"{episode.serie_name} - {episode.season_name} - {episode.name}",
+                      "Exception while indexing episode", error_msg)
+        return False
     finally:
         if should_close:
             db.close()
