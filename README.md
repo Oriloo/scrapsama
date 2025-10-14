@@ -174,6 +174,32 @@ The database consists of 5 main tables:
 
 The failures table logs all indexing failures to help identify issues during the indexing process.
 
+## Web Interface
+
+The web application provides a user-friendly interface to browse and watch anime episodes.
+
+### Features
+
+- **Search**: Real-time search for anime series by name
+- **Browse**: View all available series with thumbnails and categories
+- **Series Page**: Detailed information including synopsis, genres, and available seasons
+- **Season Page**: List all episodes for a selected season with available languages
+- **Episode Player**: Select language and player to watch episodes directly in the browser
+
+### Pages
+
+1. **Home Page** (`/`): Search bar and grid of available series
+2. **Series Detail** (`/series/<id>`): Series information and list of seasons
+3. **Season Detail** (`/season/<id>`): List of all episodes in the season
+4. **Episode Player** (`/episode/<id>`): Video player with language and player selection
+
+### API Endpoints
+
+- `GET /search?q=<query>`: Search for series by name
+- `GET /api/series`: List all series (limited to 100)
+
+All player URLs stored in the database are accessible through the episode player interface.
+
 ## License
 
 GPL-3.0
