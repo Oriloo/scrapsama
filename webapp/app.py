@@ -9,7 +9,8 @@ app = Flask(__name__)
 def get_db():
     """Get database connection."""
     db = Database()
-    db.connect()
+    if not db.connect():
+        return None
     return db
 
 @app.route('/')
@@ -25,6 +26,9 @@ def search():
         return jsonify([])
     
     db = get_db()
+    if not db:
+        return jsonify({'error': 'Database connection failed'}), 503
+    
     cursor = db._connection.cursor(dictionary=True)
     
     try:
@@ -53,6 +57,9 @@ def search():
 def series_detail(series_id):
     """Series detail page showing seasons."""
     db = get_db()
+    if not db:
+        return "Database connection failed", 503
+    
     cursor = db._connection.cursor(dictionary=True)
     
     try:
@@ -92,6 +99,9 @@ def series_detail(series_id):
 def season_detail(season_id):
     """Season detail page showing episodes."""
     db = get_db()
+    if not db:
+        return "Database connection failed", 503
+    
     cursor = db._connection.cursor(dictionary=True)
     
     try:
@@ -137,6 +147,9 @@ def season_detail(season_id):
 def episode_detail(episode_id):
     """Episode detail page with player."""
     db = get_db()
+    if not db:
+        return "Database connection failed", 503
+    
     cursor = db._connection.cursor(dictionary=True)
     
     try:
@@ -185,6 +198,9 @@ def episode_detail(episode_id):
 def api_series_list():
     """API endpoint to list all series."""
     db = get_db()
+    if not db:
+        return jsonify({'error': 'Database connection failed'}), 503
+    
     cursor = db._connection.cursor(dictionary=True)
     
     try:
