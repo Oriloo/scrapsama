@@ -19,3 +19,6 @@ wheels/
 # Docker
 .env
 docker-compose.override.yml
+
+# Test files
+test_*.py

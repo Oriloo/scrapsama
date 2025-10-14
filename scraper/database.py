@@ -3,7 +3,6 @@ import logging
 import os
 from dataclasses import dataclass
 from typing import Optional
-import json
 
 logger = logging.getLogger(__name__)
 

@@ -132,7 +132,7 @@ async def index_full_series() -> None:
     db.close()
     
     # Summary
-    console.print(f"\n[cyan bold]Indexing Complete![/]")
+    console.print("\n[cyan bold]Indexing Complete![/]")
     console.print(f"Series: {catalogue.name}")
     console.print(f"Total episodes processed: {total_episodes}")
     console.print(f"Successfully indexed: {total_indexed}")
