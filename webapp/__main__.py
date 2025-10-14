@@ -1,0 +1,5 @@
+"""Run the web application as a module."""
+from webapp.app import app
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)

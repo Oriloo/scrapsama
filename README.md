@@ -1,6 +1,12 @@
 # Scrapsama Indexer
 
-API for indexing anime series from anime-sama.fr into a MySQL database.
+API for indexing anime series from anime-sama.fr into a MySQL database with a web-based streaming interface.
+
+## Features
+
+- **Indexer**: CLI tools to index anime series, seasons, and episodes into MySQL database
+- **Web Interface**: Browser-based streaming site to search, browse, and watch anime episodes
+- **Database**: MySQL backend for storing series information and player URLs
 
 ## Installation
 
@@ -13,17 +19,19 @@ Requirements:
 # Build the Docker image (required after updates)
 docker compose build app
 
-# Start services (MySQL + phpMyAdmin)
+# Start services (MySQL + phpMyAdmin + Web Interface)
 docker compose up -d
 
 # Initialize database schema
 docker compose run --rm app python init_db.py
 
-# Run indexer
+# Run indexer to populate database
 docker compose run --rm app scrapsama-index
 ```
 
-Access phpMyAdmin at http://localhost:8080 (user: root, password: rootpassword)
+Access:
+- **Web Interface**: http://localhost:5000 - Browse and watch anime
+- **phpMyAdmin**: http://localhost:8080 (user: root, password: rootpassword)
 
 ### Option 2: Local Installation
 
@@ -49,6 +57,19 @@ export DB_PASSWORD=scrapsama_password
 ```
 
 ## Usage
+
+### Web Interface
+
+Start the web interface:
+```bash
+docker compose up web
+```
+
+Then navigate to http://localhost:5000 in your browser to:
+- Search for anime series
+- Browse series by category
+- Select seasons and episodes
+- Choose language and player for streaming
 
 ### CLI
 

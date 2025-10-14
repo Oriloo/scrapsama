@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/">Accueil</a> / 
+    <a href="/series/{{ season.serie_id }}">{{ season.serie_name }}</a> / 
+    <span>{{ season.name }}</span>
+</div>
+
+<div class="season-header">
+    <h1>{{ season.serie_name }} - {{ season.name }}</h1>
+    {% if languages %}
+    <div class="languages">
+        <strong>Langues disponibles:</strong>
+        {% for lang in languages %}
+        <span class="language-badge">{{ lang }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<div class="episodes-list">
+    <h2>Épisodes</h2>
+    {% if episodes %}
+    <div class="episodes-grid">
+        {% for episode in episodes %}
+        <a href="/episode/{{ episode.id }}" class="episode-card">
+            <div class="episode-number">{{ episode.episode_index }}</div>
+            <div class="episode-info">
+                <h3>{{ episode.episode_name }}</h3>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>Aucun épisode disponible.</p>
+    {% endif %}
+</div>
+{% endblock %}
