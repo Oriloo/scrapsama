@@ -1,6 +1,12 @@
 # Scrapsama Indexer
 
-API for indexing anime series from anime-sama.fr into a MySQL database.
+API for indexing anime series from anime-sama.fr into a MySQL database with a web-based streaming interface.
+
+## Features
+
+- **Indexer**: CLI tools to index anime series, seasons, and episodes into MySQL database
+- **Web Interface**: Browser-based streaming site to search, browse, and watch anime episodes
+- **Database**: MySQL backend for storing series information and player URLs
 
 ## Installation
 
@@ -13,17 +19,19 @@ Requirements:
 # Build the Docker image (required after updates)
 docker compose build app
 
-# Start services (MySQL + phpMyAdmin)
+# Start services (MySQL + phpMyAdmin + Web Interface)
 docker compose up -d
 
 # Initialize database schema
 docker compose run --rm app python init_db.py
 
-# Run indexer
+# Run indexer to populate database
 docker compose run --rm app scrapsama-index
 ```
 
-Access phpMyAdmin at http://localhost:8080 (user: root, password: rootpassword)
+Access:
+- **Web Interface**: http://localhost:5000 - Browse and watch anime
+- **phpMyAdmin**: http://localhost:8080 (user: root, password: rootpassword)
 
 ### Option 2: Local Installation
 
@@ -49,6 +57,19 @@ export DB_PASSWORD=scrapsama_password
 ```
 
 ## Usage
+
+### Web Interface
+
+Start the web interface:
+```bash
+docker compose up web
+```
+
+Then navigate to http://localhost:5000 in your browser to:
+- Search for anime series
+- Browse series by category
+- Select seasons and episodes
+- Choose language and player for streaming
 
 ### CLI
 
@@ -152,6 +173,32 @@ The database consists of 5 main tables:
 - created_at
 
 The failures table logs all indexing failures to help identify issues during the indexing process.
+
+## Web Interface
+
+The web application provides a user-friendly interface to browse and watch anime episodes.
+
+### Features
+
+- **Search**: Real-time search for anime series by name
+- **Browse**: View all available series with thumbnails and categories
+- **Series Page**: Detailed information including synopsis, genres, and available seasons
+- **Season Page**: List all episodes for a selected season with available languages
+- **Episode Player**: Select language and player to watch episodes directly in the browser
+
+### Pages
+
+1. **Home Page** (`/`): Search bar and grid of available series
+2. **Series Detail** (`/series/<id>`): Series information and list of seasons
+3. **Season Detail** (`/season/<id>`): List of all episodes in the season
+4. **Episode Player** (`/episode/<id>`): Video player with language and player selection
+
+### API Endpoints
+
+- `GET /search?q=<query>`: Search for series by name
+- `GET /api/series`: List all series (limited to 100)
+
+All player URLs stored in the database are accessible through the episode player interface.
 
 ## License
 

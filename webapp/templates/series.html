@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="series-header">
+    <div class="series-banner">
+        <img src="{{ series.image_url or '/static/img/placeholder.png' }}" alt="{{ series.name }}" onerror="this.src='/static/img/placeholder.png'">
+    </div>
+    <div class="series-info">
+        <h1>{{ series.name }}</h1>
+        {% if series.is_mature %}
+        <span class="mature-badge">18+</span>
+        {% endif %}
+        <div class="series-meta">
+            <span class="badge">{{ series.categories|join(', ') }}</span>
+            {% for genre in series.genres %}
+            <span class="badge">{{ genre }}</span>
+            {% endfor %}
+        </div>
+        {% if series.synopsis %}
+        <p class="synopsis">{{ series.synopsis }}</p>
+        {% endif %}
+        {% if series.advancement %}
+        <p><strong>Avancement:</strong> {{ series.advancement }}</p>
+        {% endif %}
+        {% if series.correspondence %}
+        <p><strong>Correspondance:</strong> {{ series.correspondence }}</p>
+        {% endif %}
+        <div class="languages">
+            <strong>Langues disponibles:</strong>
+            {% for lang in series.languages %}
+            <span class="language-badge">{{ lang }}</span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="seasons-list">
+    <h2>Saisons</h2>
+    {% if seasons %}
+    <div class="seasons-grid">
+        {% for season in seasons %}
+        <a href="/season/{{ season.id }}" class="season-card">
+            <h3>{{ season.name }}</h3>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>Aucune saison disponible.</p>
+    {% endif %}
+</div>
+{% endblock %}

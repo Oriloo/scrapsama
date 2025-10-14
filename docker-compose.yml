@@ -63,6 +63,30 @@ services:
     stdin_open: true
     tty: true
 
+  # Scrapsama Web Application (Streaming Site)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: scrapsama_web
+    restart: unless-stopped
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=scrapsama_db
+      - DB_USER=scrapsama_user
+      - DB_PASSWORD=scrapsama_password
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./webapp:/app/webapp
+      - ./scraper:/app/scraper
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - scrapsama_network
+
 networks:
   scrapsama_network:
     driver: bridge
