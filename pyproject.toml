@@ -35,6 +35,7 @@ dependencies = [
 scrapsama = "scraper:main"
 scrapsama-index = "scraper.cli.index_series:main"
 scrapsama-index-all = "scraper.cli.index_all_series:main"
+scrapsama-index-new = "scraper.cli.index_new_episodes:main"
 
 [project.urls]
 Repository = "https://github.com/Oriloo/scrapsama/"

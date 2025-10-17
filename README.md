@@ -79,10 +79,58 @@ scrapsama-index
 
 # Index all available series from anime-sama.fr
 scrapsama-index-all
+
+# Index new episodes from anime-sama.fr homepage
+# This command fetches the latest episodes and updates the database
+# Perfect for running as a regular cron job to keep the index up-to-date
+scrapsama-index-new
+```
+
+#### Scheduling Regular Updates
+
+To keep your database up-to-date with new episodes, you can schedule `scrapsama-index-new` to run regularly:
+
+**Using Docker with cron:**
+```bash
+# Add to your crontab (crontab -e)
+# Run every 6 hours
+0 */6 * * * docker compose -f /path/to/docker-compose.yml run --rm app scrapsama-index-new
+
+# Run daily at 2 AM
+0 2 * * * docker compose -f /path/to/docker-compose.yml run --rm app scrapsama-index-new
+```
+
+**Using systemd timer (Linux):**
+```bash
+# Create /etc/systemd/system/scrapsama-index-new.service
+[Unit]
+Description=Index new anime episodes
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/scrapsama-index-new
+User=youruser
+
+# Create /etc/systemd/system/scrapsama-index-new.timer
+[Unit]
+Description=Run scrapsama-index-new every 6 hours
+
+[Timer]
+OnBootSec=15min
+OnUnitActiveSec=6h
+
+[Install]
+WantedBy=timers.target
+
+# Enable and start the timer
+sudo systemctl enable scrapsama-index-new.timer
+sudo systemctl start scrapsama-index-new.timer
 ```
 
 ### Python API
 
+**Index a specific series:**
 ```python
 import asyncio
 from scraper import AnimeSama, Database, index_serie, index_season, index_episode
@@ -112,6 +160,22 @@ async def index_series(name):
     db.close()
 
 asyncio.run(index_series("one piece"))
+```
+
+**Get new episodes from homepage:**
+```python
+import asyncio
+from scraper import AnimeSama
+
+async def get_new_episodes():
+    anime_sama = AnimeSama("https://anime-sama.fr/")
+    episode_releases = await anime_sama.new_episodes()
+    
+    for release in episode_releases:
+        print(f"{release.serie_name} - {release.descriptive} ({release.language})")
+        print(f"  URL: {release.page_url}")
+
+asyncio.run(get_new_episodes())
 ```
 
 ## Troubleshooting
