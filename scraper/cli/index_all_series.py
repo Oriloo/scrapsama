@@ -60,6 +60,12 @@ async def index_all_available_series() -> None:
     total_indexed = 0
     failed_series = []
     
+    # Tracking counters for logging
+    new_series_count = 0
+    new_seasons_count = 0
+    new_episodes_count = 0
+    error_count = 0
+    
     # Process each series
     for series_num, catalogue in enumerate(catalogues, 1):
         console.print(f"\n[cyan bold]Processing series {series_num}/{total_series}: {catalogue.name}[/]")
@@ -70,9 +76,11 @@ async def index_all_available_series() -> None:
             if not serie_id:
                 console.print(f"[red]Failed to index series: {catalogue.name}[/]")
                 failed_series.append(catalogue.name)
+                error_count += 1
                 continue
             
             console.print(f"[green]✓ Series indexed (ID: {serie_id})[/]")
+            new_series_count += 1
             
             # Get all seasons
             with spinner(f"Getting seasons for [blue]{catalogue.name}"):
@@ -81,14 +89,13 @@ async def index_all_available_series() -> None:
                 except Exception as e:
                     error_msg = str(e)
                     console.print(f"[red]Error getting seasons: {error_msg}[/]")
-                    db.log_failure("series", catalogue.name, "Failed to get seasons", error_msg, serie_id)
                     failed_series.append(catalogue.name)
+                    error_count += 1
                     continue
             
             if not seasons:
                 console.print(f"[yellow]No seasons found for {catalogue.name}[/]")
-                db.log_failure("series", catalogue.name, "No seasons found",
-                              f"The series {catalogue.name} has no seasons available", serie_id)
+                error_count += 1
                 continue
             
             console.print(f"[green]Found {len(seasons)} season(s)[/]")
@@ -101,9 +108,11 @@ async def index_all_available_series() -> None:
                 season_id = index_season(season, serie_id, db)
                 if not season_id:
                     console.print(f"  [red]Failed to index season: {season.name}[/]")
+                    error_count += 1
                     continue
                 
                 console.print(f"  [green]✓ Season indexed (ID: {season_id})[/]")
+                new_seasons_count += 1
                 
                 with spinner(f"Getting episodes for [blue]{season.name}"):
                     try:
@@ -111,8 +120,7 @@ async def index_all_available_series() -> None:
                     except Exception as e:
                         error_msg = str(e)
                         console.print(f"  [red]Error getting episodes for {season.name}: {error_msg}[/]")
-                        db.log_failure("season", f"{catalogue.name} - {season.name}", 
-                                      "Failed to get episodes", error_msg, season_id)
+                        error_count += 1
                         continue
                 
                 if not episodes:
@@ -128,19 +136,24 @@ async def index_all_available_series() -> None:
                         success = index_episode(episode, season_id, db)
                         if success:
                             total_indexed += 1
+                            new_episodes_count += 1
                             console.print(f"    [green]✓[/] [{episode_num}/{len(episodes)}] {episode.name}")
                         else:
+                            error_count += 1
                             console.print(f"    [red]✗[/] [{episode_num}/{len(episodes)}] {episode.name} - Failed to index")
                     except Exception as e:
+                        error_count += 1
                         console.print(f"    [red]✗[/] [{episode_num}/{len(episodes)}] {episode.name} - Error: {e}")
         
         except Exception as e:
             error_msg = str(e)
             console.print(f"[red]Error processing series {catalogue.name}: {error_msg}[/]")
-            db.log_failure("series", catalogue.name, "Exception processing series", error_msg)
             failed_series.append(catalogue.name)
+            error_count += 1
             continue
     
+    # Log the indexing operation
+    db.log_indexing("index-all", new_series_count, new_seasons_count, new_episodes_count, error_count)
     db.close()
     
     # Summary

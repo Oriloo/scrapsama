@@ -142,18 +142,17 @@ class Database:
                 )
             """)
             
-            # Create failures table
+            # Create logs table
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS failures (
+                CREATE TABLE IF NOT EXISTS logs (
                     id INT AUTO_INCREMENT PRIMARY KEY,
-                    entity_type ENUM('series', 'season', 'episode', 'player') NOT NULL,
-                    entity_name VARCHAR(255) NOT NULL,
-                    entity_id INT,
-                    error_message TEXT NOT NULL,
-                    error_details TEXT,
+                    command VARCHAR(255) NOT NULL,
+                    new_series INT DEFAULT 0,
+                    new_seasons INT DEFAULT 0,
+                    new_episodes INT DEFAULT 0,
+                    error_count INT DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    INDEX idx_entity_type (entity_type),
-                    INDEX idx_entity_name (entity_name),
+                    INDEX idx_command (command),
                     INDEX idx_created_at (created_at)
                 )
             """)
@@ -385,16 +384,16 @@ class Database:
         finally:
             cursor.close()
     
-    def log_failure(self, entity_type: str, entity_name: str, error_message: str, 
-                    error_details: str = "", entity_id: Optional[int] = None) -> bool:
-        """Log an indexing failure to the database.
+    def log_indexing(self, command: str, new_series: int = 0, new_seasons: int = 0, 
+                     new_episodes: int = 0, error_count: int = 0) -> bool:
+        """Log an indexing operation to the database.
         
         Args:
-            entity_type: Type of entity ('series', 'season', 'episode', 'player')
-            entity_name: Name/identifier of the entity that failed
-            error_message: Short error message
-            error_details: Detailed error information (optional)
-            entity_id: Database ID of the entity if available (optional)
+            command: Command executed (e.g., "index[series_name]", "index-all", "index-new")
+            new_series: Number of new series indexed
+            new_seasons: Number of new seasons indexed
+            new_episodes: Number of new episodes indexed
+            error_count: Number of errors encountered during indexing
             
         Returns:
             True if logged successfully, False otherwise
@@ -405,23 +404,23 @@ class Database:
         cursor = self._connection.cursor()
         try:
             cursor.execute("""
-                INSERT INTO failures 
-                (entity_type, entity_name, entity_id, error_message, error_details)
+                INSERT INTO logs 
+                (command, new_series, new_seasons, new_episodes, error_count)
                 VALUES (%s, %s, %s, %s, %s)
             """, (
-                entity_type,
-                entity_name,
-                entity_id,
-                error_message,
-                error_details,
+                command,
+                new_series,
+                new_seasons,
+                new_episodes,
+                error_count,
             ))
             
             self._connection.commit()
-            logger.info(f"Logged failure for {entity_type}: {entity_name} - {error_message}")
+            logger.info(f"Logged indexing operation: {command} - Series: {new_series}, Seasons: {new_seasons}, Episodes: {new_episodes}, Errors: {error_count}")
             return True
             
         except Exception as e:
-            logger.error(f"Failed to log failure: {e}")
+            logger.error(f"Failed to log indexing operation: {e}")
             self._connection.rollback()
             return False
         finally:
@@ -476,7 +475,6 @@ def index_serie(catalogue, db: Optional[Database] = None) -> Optional[int]:
     except Exception as e:
         error_msg = str(e)
         logger.error(f"Failed to index series {catalogue.name}: {error_msg}")
-        db.log_failure("series", catalogue.name, "Failed to index series", error_msg)
         return None
     finally:
         if should_close:
@@ -522,8 +520,6 @@ def index_season(season, serie_id: int, db: Optional[Database] = None) -> Option
     except Exception as e:
         error_msg = str(e)
         logger.error(f"Failed to index season {season.name}: {error_msg}")
-        db.log_failure("season", f"{season.serie_name} - {season.name}", 
-                       "Failed to index season", error_msg, serie_id)
         return None
     finally:
         if should_close:
@@ -571,8 +567,6 @@ def index_episode(episode, season_id: Optional[int] = None, db: Optional[Databas
             if season_id is None:
                 error_msg = f"Season not found in database: {episode.serie_name} - {episode.season_name}"
                 logger.error(error_msg)
-                db.log_failure("episode", f"{episode.serie_name} - {episode.season_name} - {episode.name}", 
-                              "Season not found", error_msg)
                 return False
         
         # Prepare episode data
@@ -588,8 +582,7 @@ def index_episode(episode, season_id: Optional[int] = None, db: Optional[Databas
         # Save episode
         episode_id = db.save_episode(episode_data)
         if not episode_id:
-            db.log_failure("episode", f"{episode.serie_name} - {episode.season_name} - {episode.name}",
-                          "Failed to save episode", "Database save operation failed", season_id)
+            logger.error(f"Failed to save episode: {episode.serie_name} - {episode.season_name} - {episode.name}")
             return False
         
         # Save players for each language
@@ -598,19 +591,10 @@ def index_episode(episode, season_id: Optional[int] = None, db: Optional[Databas
                 try:
                     success = db.save_players(episode_id, lang_id, list(players))
                     if not success:
-                        db.log_failure("player", 
-                                      f"{episode.serie_name} - {episode.name} - {lang_id}",
-                                      "Failed to save players", 
-                                      f"Failed to save {len(players)} players for language {lang_id}",
-                                      episode_id)
+                        logger.error(f"Failed to save players for {episode.serie_name} - {episode.name} - {lang_id}")
                 except Exception as e:
                     error_msg = str(e)
                     logger.error(f"Error saving players for {episode.name} ({lang_id}): {error_msg}")
-                    db.log_failure("player", 
-                                  f"{episode.serie_name} - {episode.name} - {lang_id}",
-                                  "Exception while saving players", 
-                                  error_msg,
-                                  episode_id)
         
         logger.info(f"Successfully indexed episode: {episode.name}")
         return True
@@ -618,8 +602,6 @@ def index_episode(episode, season_id: Optional[int] = None, db: Optional[Databas
     except Exception as e:
         error_msg = str(e)
         logger.error(f"Failed to index episode {episode.name}: {error_msg}")
-        db.log_failure("episode", f"{episode.serie_name} - {episode.season_name} - {episode.name}",
-                      "Exception while indexing episode", error_msg)
         return False
     finally:
         if should_close:

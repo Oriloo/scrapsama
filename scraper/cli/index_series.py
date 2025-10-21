@@ -56,16 +56,25 @@ async def index_full_series() -> None:
         db.close()
         return
     
+    # Tracking counters
+    new_series_count = 0
+    new_seasons_count = 0
+    new_episodes_count = 0
+    error_count = 0
+    
     # Index the series first
     with spinner(f"Indexing series [blue]{catalogue.name}"):
         serie_id = index_serie(catalogue, db)
     
     if not serie_id:
         console.print(f"[red]Failed to index series: {catalogue.name}[/]")
+        error_count += 1
+        db.log_indexing(f"index[{catalogue.name}]", 0, 0, 0, error_count)
         db.close()
         return
     
     console.print(f"[green]✓ Series indexed (ID: {serie_id})[/]")
+    new_series_count = 1
     
     # Get all seasons
     with spinner(f"Getting all seasons for [blue]{catalogue.name}"):
@@ -74,14 +83,15 @@ async def index_full_series() -> None:
         except Exception as e:
             error_msg = str(e)
             console.print(f"[red]Error getting seasons: {error_msg}[/]")
-            db.log_failure("series", catalogue.name, "Failed to get seasons", error_msg, serie_id)
+            error_count += 1
+            db.log_indexing(f"index[{catalogue.name}]", new_series_count, 0, 0, error_count)
             db.close()
             return
     
     if not seasons:
         console.print(f"[yellow]No seasons found for {catalogue.name}[/]")
-        db.log_failure("series", catalogue.name, "No seasons found", 
-                      f"The series {catalogue.name} has no seasons available", serie_id)
+        error_count += 1
+        db.log_indexing(f"index[{catalogue.name}]", new_series_count, 0, 0, error_count)
         db.close()
         return
     
@@ -98,9 +108,11 @@ async def index_full_series() -> None:
         season_id = index_season(season, serie_id, db)
         if not season_id:
             console.print(f"[red]Failed to index season: {season.name}[/]")
+            error_count += 1
             continue
         
         console.print(f"[green]✓ Season indexed (ID: {season_id})[/]")
+        new_seasons_count += 1
         
         with spinner(f"Getting episodes for [blue]{season.name}"):
             try:
@@ -108,8 +120,7 @@ async def index_full_series() -> None:
             except Exception as e:
                 error_msg = str(e)
                 console.print(f"[red]Error getting episodes for {season.name}: {error_msg}[/]")
-                db.log_failure("season", f"{catalogue.name} - {season.name}", 
-                              "Failed to get episodes", error_msg, season_id)
+                error_count += 1
                 continue
         
         if not episodes:
@@ -125,12 +136,17 @@ async def index_full_series() -> None:
                 success = index_episode(episode, season_id, db)
                 if success:
                     total_indexed += 1
+                    new_episodes_count += 1
                     console.print(f"  [green]✓[/] [{episode_num}/{len(episodes)}] {episode.name}")
                 else:
+                    error_count += 1
                     console.print(f"  [red]✗[/] [{episode_num}/{len(episodes)}] {episode.name} - Failed to index")
             except Exception as e:
+                error_count += 1
                 console.print(f"  [red]✗[/] [{episode_num}/{len(episodes)}] {episode.name} - Error: {e}")
     
+    # Log the indexing operation
+    db.log_indexing(f"index[{catalogue.name}]", new_series_count, new_seasons_count, new_episodes_count, error_count)
     db.close()
     
     # Summary
