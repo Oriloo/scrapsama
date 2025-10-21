@@ -25,6 +25,9 @@ docker compose up -d
 # Initialize database schema
 docker compose run --rm app python init_db.py
 
+# For existing installations: migrate from old failures table to new logs table
+docker compose run --rm app python migrate_to_logs.py
+
 # Run indexer to populate database
 docker compose run --rm app scrapsama-index
 ```
