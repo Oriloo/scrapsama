@@ -167,17 +167,17 @@ class Database:
         finally:
             cursor.close()
     
-    def save_serie(self, serie_data: dict) -> Optional[int]:
+    def save_serie(self, serie_data: dict) -> tuple[Optional[int], bool]:
         """Save series information to database.
         
         Args:
             serie_data: Dictionary containing series information
             
         Returns:
-            Series ID if successful, None otherwise
+            Tuple of (Series ID if successful, True if newly created) or (None, False) on error
         """
         if not self._connection:
-            return None
+            return None, False
             
         cursor = self._connection.cursor()
         try:
@@ -187,6 +187,13 @@ class Database:
             genres = json.dumps(serie_data.get("genres", []))
             categories = json.dumps(list(serie_data.get("categories", [])))
             languages = json.dumps(list(serie_data.get("languages", [])))
+            
+            # Check if series already exists
+            cursor.execute("""
+                SELECT id FROM series WHERE name = %s
+            """, (serie_data["name"],))
+            existing = cursor.fetchone()
+            is_new = existing is None
             
             # Insert or update series
             cursor.execute("""
@@ -229,30 +236,41 @@ class Database:
             serie_id = result[0] if result else None
             
             self._connection.commit()
-            logger.info(f"Saved series: {serie_data['name']} (ID: {serie_id})")
-            return serie_id
+            logger.info(f"{'Created' if is_new else 'Updated'} series: {serie_data['name']} (ID: {serie_id})")
+            return serie_id, is_new
             
         except Exception as e:
             logger.error(f"Failed to save series: {e}")
             self._connection.rollback()
-            return None
+            return None, False
         finally:
             cursor.close()
     
-    def save_season(self, season_data: dict) -> Optional[int]:
+    def save_season(self, season_data: dict) -> tuple[Optional[int], bool]:
         """Save season information to database.
         
         Args:
             season_data: Dictionary containing season information
             
         Returns:
-            Season ID if successful, None otherwise
+            Tuple of (Season ID if successful, True if newly created) or (None, False) on error
         """
         if not self._connection:
-            return None
+            return None, False
             
         cursor = self._connection.cursor()
         try:
+            # Check if season already exists
+            cursor.execute("""
+                SELECT id FROM seasons 
+                WHERE serie_id = %s AND name = %s
+            """, (
+                season_data["serie_id"],
+                season_data["name"],
+            ))
+            existing = cursor.fetchone()
+            is_new = existing is None
+            
             # Insert or update season
             cursor.execute("""
                 INSERT INTO seasons 
@@ -280,30 +298,41 @@ class Database:
             season_id = result[0] if result else None
             
             self._connection.commit()
-            logger.info(f"Saved season: {season_data['name']} (ID: {season_id})")
-            return season_id
+            logger.info(f"{'Created' if is_new else 'Updated'} season: {season_data['name']} (ID: {season_id})")
+            return season_id, is_new
             
         except Exception as e:
             logger.error(f"Failed to save season: {e}")
             self._connection.rollback()
-            return None
+            return None, False
         finally:
             cursor.close()
     
-    def save_episode(self, episode_data: dict) -> Optional[int]:
+    def save_episode(self, episode_data: dict) -> tuple[Optional[int], bool]:
         """Save episode information to database.
         
         Args:
             episode_data: Dictionary containing episode information
             
         Returns:
-            Episode ID if successful, None otherwise
+            Tuple of (Episode ID if successful, True if newly created) or (None, False) on error
         """
         if not self._connection:
-            return None
+            return None, False
             
         cursor = self._connection.cursor()
         try:
+            # Check if episode already exists
+            cursor.execute("""
+                SELECT id FROM episodes 
+                WHERE season_id = %s AND episode_index = %s
+            """, (
+                episode_data["season_id"],
+                episode_data["episode_index"],
+            ))
+            existing = cursor.fetchone()
+            is_new = existing is None
+            
             # Insert or update episode
             cursor.execute("""
                 INSERT INTO episodes 
@@ -335,13 +364,13 @@ class Database:
             episode_id = result[0] if result else None
             
             self._connection.commit()
-            logger.info(f"Saved episode: {episode_data['episode_name']} (ID: {episode_id})")
-            return episode_id
+            logger.info(f"{'Created' if is_new else 'Updated'} episode: {episode_data['episode_name']} (ID: {episode_id})")
+            return episode_id, is_new
             
         except Exception as e:
             logger.error(f"Failed to save episode: {e}")
             self._connection.rollback()
-            return None
+            return None, False
         finally:
             cursor.close()
     
@@ -433,7 +462,7 @@ class Database:
             logger.info("Database connection closed")
 
 
-def index_serie(catalogue, db: Optional[Database] = None) -> Optional[int]:
+def index_serie(catalogue, db: Optional[Database] = None) -> tuple[Optional[int], bool]:
     """Index a series (catalogue) in the database.
     
     Args:
@@ -441,16 +470,16 @@ def index_serie(catalogue, db: Optional[Database] = None) -> Optional[int]:
         db: Database instance. If None, creates a new one.
         
     Returns:
-        Series ID if successful, None otherwise
+        Tuple of (Series ID if successful, True if newly created) or (None, False) on error
     """
     should_close = False
     if db is None:
         db = Database()
         if not db.connect():
-            return None
+            return None, False
         if not db.initialize_schema():
             db.close()
-            return None
+            return None, False
         should_close = True
     
     try:
@@ -466,22 +495,22 @@ def index_serie(catalogue, db: Optional[Database] = None) -> Optional[int]:
         }
         
         # Save series
-        serie_id = db.save_serie(serie_data)
+        serie_id, is_new = db.save_serie(serie_data)
         if serie_id:
             logger.info(f"Successfully indexed series: {catalogue.name}")
         
-        return serie_id
+        return serie_id, is_new
         
     except Exception as e:
         error_msg = str(e)
         logger.error(f"Failed to index series {catalogue.name}: {error_msg}")
-        return None
+        return None, False
     finally:
         if should_close:
             db.close()
 
 
-def index_season(season, serie_id: int, db: Optional[Database] = None) -> Optional[int]:
+def index_season(season, serie_id: int, db: Optional[Database] = None) -> tuple[Optional[int], bool]:
     """Index a season in the database.
     
     Args:
@@ -490,16 +519,16 @@ def index_season(season, serie_id: int, db: Optional[Database] = None) -> Option
         db: Database instance. If None, creates a new one.
         
     Returns:
-        Season ID if successful, None otherwise
+        Tuple of (Season ID if successful, True if newly created) or (None, False) on error
     """
     should_close = False
     if db is None:
         db = Database()
         if not db.connect():
-            return None
+            return None, False
         if not db.initialize_schema():
             db.close()
-            return None
+            return None, False
         should_close = True
     
     try:
@@ -511,22 +540,22 @@ def index_season(season, serie_id: int, db: Optional[Database] = None) -> Option
         }
         
         # Save season
-        season_id = db.save_season(season_data)
+        season_id, is_new = db.save_season(season_data)
         if season_id:
             logger.info(f"Successfully indexed season: {season.name}")
         
-        return season_id
+        return season_id, is_new
         
     except Exception as e:
         error_msg = str(e)
         logger.error(f"Failed to index season {season.name}: {error_msg}")
-        return None
+        return None, False
     finally:
         if should_close:
             db.close()
 
 
-def index_episode(episode, season_id: Optional[int] = None, db: Optional[Database] = None) -> bool:
+def index_episode(episode, season_id: Optional[int] = None, db: Optional[Database] = None) -> tuple[bool, bool]:
     """Index an episode and its players in the database.
     
     Args:
@@ -535,16 +564,16 @@ def index_episode(episode, season_id: Optional[int] = None, db: Optional[Databas
         db: Database instance. If None, creates a new one.
         
     Returns:
-        True if successful, False otherwise
+        Tuple of (True if successful, True if newly created) or (False, False) on error
     """
     should_close = False
     if db is None:
         db = Database()
         if not db.connect():
-            return False
+            return False, False
         if not db.initialize_schema():
             db.close()
-            return False
+            return False, False
         should_close = True
     
     try:
@@ -567,7 +596,7 @@ def index_episode(episode, season_id: Optional[int] = None, db: Optional[Databas
             if season_id is None:
                 error_msg = f"Season not found in database: {episode.serie_name} - {episode.season_name}"
                 logger.error(error_msg)
-                return False
+                return False, False
         
         # Prepare episode data
         episode_data = {
@@ -580,10 +609,10 @@ def index_episode(episode, season_id: Optional[int] = None, db: Optional[Databas
         }
         
         # Save episode
-        episode_id = db.save_episode(episode_data)
+        episode_id, is_new = db.save_episode(episode_data)
         if not episode_id:
             logger.error(f"Failed to save episode: {episode.serie_name} - {episode.season_name} - {episode.name}")
-            return False
+            return False, False
         
         # Save players for each language
         for lang_id, players in episode.languages.items():
@@ -597,12 +626,12 @@ def index_episode(episode, season_id: Optional[int] = None, db: Optional[Databas
                     logger.error(f"Error saving players for {episode.name} ({lang_id}): {error_msg}")
         
         logger.info(f"Successfully indexed episode: {episode.name}")
-        return True
+        return True, is_new
         
     except Exception as e:
         error_msg = str(e)
         logger.error(f"Failed to index episode {episode.name}: {error_msg}")
-        return False
+        return False, False
     finally:
         if should_close:
             db.close()

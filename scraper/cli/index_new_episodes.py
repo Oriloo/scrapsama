@@ -97,13 +97,14 @@ async def index_new_episodes() -> None:
             # Index the series if not already done in this run
             serie_id: Optional[int] = None
             if release.serie_name not in series_processed:
-                serie_id = index_serie(catalogue, db)
+                serie_id, is_new_serie = index_serie(catalogue, db)
                 if not serie_id:
                     console.print(f"[red]  ✗ Failed to index series: {catalogue.name}[/]")
                     error_count += 1
                     continue
-                console.print(f"[green]  ✓ Series indexed (ID: {serie_id})[/]")
-                new_series_count += 1
+                console.print(f"[green]  ✓ Series {'created' if is_new_serie else 'updated'} (ID: {serie_id})[/]")
+                if is_new_serie:
+                    new_series_count += 1
                 series_processed.add(release.serie_name)
             else:
                 # Get serie_id from database
@@ -161,14 +162,15 @@ async def index_new_episodes() -> None:
                 console.print(f"  [cyan]Processing season: {season.name}[/]")
                 
                 # Index the season
-                season_id = index_season(season, serie_id, db)
+                season_id, is_new_season = index_season(season, serie_id, db)
                 if not season_id:
                     console.print(f"    [red]✗ Failed to index season: {season.name}[/]")
                     error_count += 1
                     continue
                 
-                console.print(f"    [green]✓ Season indexed (ID: {season_id})[/]")
-                new_seasons_count += 1
+                console.print(f"    [green]✓ Season {'created' if is_new_season else 'updated'} (ID: {season_id})[/]")
+                if is_new_season:
+                    new_seasons_count += 1
                 
                 # Get and index episodes
                 with spinner(f"Getting episodes for [blue]{season.name}"):
@@ -190,11 +192,13 @@ async def index_new_episodes() -> None:
                 for episode_num, episode in enumerate(episodes, 1):
                     total_processed += 1
                     try:
-                        success = index_episode(episode, season_id, db)
+                        success, is_new_episode = index_episode(episode, season_id, db)
                         if success:
                             total_indexed += 1
-                            new_episodes_count += 1
-                            console.print(f"      [green]✓[/] [{episode_num}/{len(episodes)}] {episode.name}")
+                            if is_new_episode:
+                                new_episodes_count += 1
+                            status = "created" if is_new_episode else "updated"
+                            console.print(f"      [green]✓[/] [{episode_num}/{len(episodes)}] {episode.name} ({status})")
                         else:
                             error_count += 1
                             console.print(f"      [red]✗[/] [{episode_num}/{len(episodes)}] {episode.name} - Failed to index")
