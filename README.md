@@ -25,6 +25,9 @@ docker compose up -d
 # Initialize database schema
 docker compose run --rm app python init_db.py
 
+# For existing installations: migrate from old failures table to new logs table
+docker compose run --rm app python migrate_to_logs.py
+
 # Run indexer to populate database
 docker compose run --rm app scrapsama-index
 ```
@@ -229,14 +232,14 @@ The database consists of 5 main tables:
 - language, player_url, player_hostname, player_order
 - created_at
 
-**failures table:**
+**logs table:**
 - id (PRIMARY KEY)
-- entity_type (series, season, episode, player)
-- entity_name, entity_id
-- error_message, error_details
+- command (e.g., "index[series_name]", "index-all", "index-new")
+- new_series, new_seasons, new_episodes (count of newly indexed items)
+- error_count (number of errors encountered)
 - created_at
 
-The failures table logs all indexing failures to help identify issues during the indexing process.
+The logs table tracks all indexing operations, recording statistics about what was indexed and any errors encountered during the process.
 
 ## Web Interface
 

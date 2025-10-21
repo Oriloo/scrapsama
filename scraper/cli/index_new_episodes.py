@@ -68,6 +68,12 @@ async def index_new_episodes() -> None:
     total_indexed = 0
     series_processed = set()
     
+    # Tracking counters for logging
+    new_series_count = 0
+    new_seasons_count = 0
+    new_episodes_count = 0
+    error_count = 0
+    
     # Process each episode release
     for release_num, release in enumerate(episode_releases, 1):
         console.print(f"\n[cyan]Processing release {release_num}/{len(episode_releases)}:[/]")
@@ -82,8 +88,7 @@ async def index_new_episodes() -> None:
             
             if not catalogues:
                 console.print(f"[yellow]  ⚠ Series not found: {release.serie_name}[/]")
-                db.log_failure("series", release.serie_name, "Series not found in search",
-                              f"Searched for '{release.serie_name}' but got no results")
+                error_count += 1
                 continue
             
             # Find the exact matching catalogue (usually the first one is correct)
@@ -92,11 +97,14 @@ async def index_new_episodes() -> None:
             # Index the series if not already done in this run
             serie_id: Optional[int] = None
             if release.serie_name not in series_processed:
-                serie_id = index_serie(catalogue, db)
+                serie_id, is_new_serie = index_serie(catalogue, db)
                 if not serie_id:
                     console.print(f"[red]  ✗ Failed to index series: {catalogue.name}[/]")
+                    error_count += 1
                     continue
-                console.print(f"[green]  ✓ Series indexed (ID: {serie_id})[/]")
+                console.print(f"[green]  ✓ Series {'created' if is_new_serie else 'updated'} (ID: {serie_id})[/]")
+                if is_new_serie:
+                    new_series_count += 1
                 series_processed.add(release.serie_name)
             else:
                 # Get serie_id from database
@@ -113,6 +121,7 @@ async def index_new_episodes() -> None:
             
             if not serie_id:
                 console.print(f"[red]  ✗ Failed to get series ID for: {release.serie_name}[/]")
+                error_count += 1
                 continue
             
             # Get all seasons
@@ -122,7 +131,7 @@ async def index_new_episodes() -> None:
                 except Exception as e:
                     error_msg = str(e)
                     console.print(f"[red]  ✗ Error getting seasons: {error_msg}[/]")
-                    db.log_failure("series", catalogue.name, "Failed to get seasons", error_msg, serie_id)
+                    error_count += 1
                     continue
             
             if not seasons:
@@ -142,7 +151,7 @@ async def index_new_episodes() -> None:
             if not target_season:
                 # If we can't match by URL, try to match by the descriptive text
                 # or just process all seasons (safer option)
-                console.print(f"[yellow]  ⚠ Could not identify specific season, indexing all seasons[/]")
+                console.print("[yellow]  ⚠ Could not identify specific season, indexing all seasons[/]")
                 seasons_to_process = seasons
             else:
                 console.print(f"[cyan]  → Found matching season: {target_season.name}[/]")
@@ -153,12 +162,15 @@ async def index_new_episodes() -> None:
                 console.print(f"  [cyan]Processing season: {season.name}[/]")
                 
                 # Index the season
-                season_id = index_season(season, serie_id, db)
+                season_id, is_new_season = index_season(season, serie_id, db)
                 if not season_id:
                     console.print(f"    [red]✗ Failed to index season: {season.name}[/]")
+                    error_count += 1
                     continue
                 
-                console.print(f"    [green]✓ Season indexed (ID: {season_id})[/]")
+                console.print(f"    [green]✓ Season {'created' if is_new_season else 'updated'} (ID: {season_id})[/]")
+                if is_new_season:
+                    new_seasons_count += 1
                 
                 # Get and index episodes
                 with spinner(f"Getting episodes for [blue]{season.name}"):
@@ -167,8 +179,7 @@ async def index_new_episodes() -> None:
                     except Exception as e:
                         error_msg = str(e)
                         console.print(f"    [red]✗ Error getting episodes: {error_msg}[/]")
-                        db.log_failure("season", f"{catalogue.name} - {season.name}",
-                                      "Failed to get episodes", error_msg, season_id)
+                        error_count += 1
                         continue
                 
                 if not episodes:
@@ -181,21 +192,28 @@ async def index_new_episodes() -> None:
                 for episode_num, episode in enumerate(episodes, 1):
                     total_processed += 1
                     try:
-                        success = index_episode(episode, season_id, db)
+                        success, is_new_episode = index_episode(episode, season_id, db)
                         if success:
                             total_indexed += 1
-                            console.print(f"      [green]✓[/] [{episode_num}/{len(episodes)}] {episode.name}")
+                            if is_new_episode:
+                                new_episodes_count += 1
+                            status = "created" if is_new_episode else "updated"
+                            console.print(f"      [green]✓[/] [{episode_num}/{len(episodes)}] {episode.name} ({status})")
                         else:
+                            error_count += 1
                             console.print(f"      [red]✗[/] [{episode_num}/{len(episodes)}] {episode.name} - Failed to index")
                     except Exception as e:
+                        error_count += 1
                         console.print(f"      [red]✗[/] [{episode_num}/{len(episodes)}] {episode.name} - Error: {e}")
         
         except Exception as e:
             error_msg = str(e)
             console.print(f"[red]  ✗ Error processing release: {error_msg}[/]")
-            db.log_failure("series", release.serie_name, "Exception processing release", error_msg)
+            error_count += 1
             continue
     
+    # Log the indexing operation
+    db.log_indexing("index-new", new_series_count, new_seasons_count, new_episodes_count, error_count)
     db.close()
     
     # Summary
