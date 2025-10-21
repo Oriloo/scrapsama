@@ -150,7 +150,7 @@ async def index_new_episodes() -> None:
             if not target_season:
                 # If we can't match by URL, try to match by the descriptive text
                 # or just process all seasons (safer option)
-                console.print(f"[yellow]  ⚠ Could not identify specific season, indexing all seasons[/]")
+                console.print("[yellow]  ⚠ Could not identify specific season, indexing all seasons[/]")
                 seasons_to_process = seasons
             else:
                 console.print(f"[cyan]  → Found matching season: {target_season.name}[/]")
