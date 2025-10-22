@@ -1,171 +1,253 @@
-# Scrapsama Indexer
+# Scrapsama
 
-API for indexing anime series from anime-sama.fr into a MySQL database with a web-based streaming interface.
+API Python pour indexer les séries anime depuis anime-sama.fr dans une base de données MySQL.
 
-## Features
+## Fonctionnalités
 
-- **Indexer**: CLI tools to index anime series, seasons, and episodes into MySQL database
-- **Web Interface**: Browser-based streaming site to search, browse, and watch anime episodes
-- **Database**: MySQL backend for storing series information and player URLs
+- **Indexation**: Outils CLI pour indexer les séries anime, les saisons et les épisodes dans une base de données MySQL
+- **API Python**: API complète pour rechercher, récupérer et indexer les anime
+- **Base de données**: Backend MySQL pour stocker les informations des séries et les URLs des lecteurs
 
-## Installation
+## Installation sous Linux
 
-### Option 1: Docker (Recommended)
+### Prérequis
 
-Requirements:
-- Docker & Docker Compose
+- Python 3.10 ou supérieur
+- MySQL 8.0 ou supérieur
+- pip (gestionnaire de paquets Python)
 
+### Étape 1: Installer Python et les dépendances système
+
+**Sur Ubuntu/Debian:**
 ```bash
-# Build the Docker image (required after updates)
-docker compose build app
-
-# Start services (MySQL + phpMyAdmin + Web Interface)
-docker compose up -d
-
-# Initialize database schema
-docker compose run --rm app python init_db.py
-
-# For existing installations: migrate from old failures table to new logs table
-docker compose run --rm app python migrate_to_logs.py
-
-# Run indexer to populate database
-docker compose run --rm app scrapsama-index
+sudo apt update
+sudo apt install python3 python3-pip python3-venv mysql-server
 ```
 
-Access:
-- **Web Interface**: http://localhost:5000 - Browse and watch anime
-- **phpMyAdmin**: http://localhost:8080 (user: root, password: rootpassword)
+**Sur Fedora/RHEL:**
+```bash
+sudo dnf install python3 python3-pip mysql-server
+sudo systemctl start mysqld
+sudo systemctl enable mysqld
+```
 
-### Option 2: Local Installation
+**Sur Arch Linux:**
+```bash
+sudo pacman -S python python-pip mysql
+sudo systemctl start mysqld
+sudo systemctl enable mysqld
+```
 
-Requirements:
-- Python 3.10+
-- MySQL 8.0+
+### Étape 2: Configurer MySQL
 
 ```bash
+# Sécuriser l'installation MySQL
+sudo mysql_secure_installation
+
+# Se connecter à MySQL
+sudo mysql -u root -p
+
+# Créer la base de données et l'utilisateur
+CREATE DATABASE scrapsama_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'scrapsama_user'@'localhost' IDENTIFIED BY 'votre_mot_de_passe';
+GRANT ALL PRIVILEGES ON scrapsama_db.* TO 'scrapsama_user'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+### Étape 3: Installer Scrapsama
+
+**Option A: Installation depuis PyPI (recommandé)**
+```bash
+# Créer un environnement virtuel
+python3 -m venv scrapsama-env
+source scrapsama-env/bin/activate
+
+# Installer le package
+pip install scrapsama
+```
+
+**Option B: Installation depuis le code source**
+```bash
+# Cloner le dépôt
+git clone https://github.com/Oriloo/scrapsama.git
+cd scrapsama
+
+# Créer un environnement virtuel
+python3 -m venv venv
+source venv/bin/activate
+
+# Installer les dépendances
+pip install -r requirements.txt
+
+# Installer le package en mode développement
 pip install -e .
-pip install mysql-connector-python rich
 ```
 
-## Configuration
+### Étape 4: Configuration
 
-Set database connection via environment variables:
+Créer un fichier de configuration pour les variables d'environnement:
 
 ```bash
+# Créer le fichier ~/.scrapsama_env
+cat > ~/.scrapsama_env << 'EOF'
 export DB_HOST=localhost
 export DB_PORT=3306
 export DB_NAME=scrapsama_db
 export DB_USER=scrapsama_user
-export DB_PASSWORD=scrapsama_password
+export DB_PASSWORD=votre_mot_de_passe
+EOF
+
+# Charger les variables d'environnement
+source ~/.scrapsama_env
+
+# Pour charger automatiquement au démarrage, ajouter à ~/.bashrc
+echo "source ~/.scrapsama_env" >> ~/.bashrc
 ```
 
-## Usage
+### Étape 5: Initialiser la base de données
 
-### Web Interface
+La base de données sera automatiquement initialisée lors de la première utilisation des outils CLI.
 
-Start the web interface:
+## Utilisation
+
+### Outils en ligne de commande
+
+**Indexer une série spécifique:**
 ```bash
-docker compose up web
-```
+# Activer l'environnement virtuel si nécessaire
+source scrapsama-env/bin/activate  # ou source venv/bin/activate
 
-Then navigate to http://localhost:5000 in your browser to:
-- Search for anime series
-- Browse series by category
-- Select seasons and episodes
-- Choose language and player for streaming
-
-### CLI
-
-```bash
-# Index a specific series (prompts for series name)
+# Lancer l'indexation (vous serez invité à entrer le nom de la série)
 scrapsama-index
+```
 
-# Index all available series from anime-sama.fr
+**Indexer toutes les séries:**
+```bash
 scrapsama-index-all
+```
 
-# Index new episodes from anime-sama.fr homepage
-# This command fetches the latest episodes and updates the database
-# Perfect for running as a regular cron job to keep the index up-to-date
+**Indexer les nouveaux épisodes:**
+```bash
+# Cette commande récupère les derniers épisodes depuis la page d'accueil
+# Parfait pour être exécuté régulièrement via cron
 scrapsama-index-new
 ```
 
-#### Scheduling Regular Updates
+### Automatiser les mises à jour avec cron
 
-To keep your database up-to-date with new episodes, you can schedule `scrapsama-index-new` to run regularly:
+Pour maintenir votre base de données à jour avec les nouveaux épisodes:
 
-**Using Docker with cron:**
 ```bash
-# Add to your crontab (crontab -e)
-# Run every 6 hours
-0 */6 * * * docker compose -f /path/to/docker-compose.yml run --rm app scrapsama-index-new
+# Éditer le crontab
+crontab -e
 
-# Run daily at 2 AM
-0 2 * * * docker compose -f /path/to/docker-compose.yml run --rm app scrapsama-index-new
+# Ajouter une ligne pour exécuter toutes les 6 heures
+0 */6 * * * /home/votreuser/scrapsama-env/bin/scrapsama-index-new >> /var/log/scrapsama.log 2>&1
+
+# Ou pour exécuter tous les jours à 2h du matin
+0 2 * * * /home/votreuser/scrapsama-env/bin/scrapsama-index-new >> /var/log/scrapsama.log 2>&1
 ```
 
-**Using systemd timer (Linux):**
+### Automatiser avec systemd (méthode moderne)
+
+**Créer le service:**
 ```bash
-# Create /etc/systemd/system/scrapsama-index-new.service
+sudo nano /etc/systemd/system/scrapsama-index-new.service
+```
+
+Contenu du fichier:
+```ini
 [Unit]
-Description=Index new anime episodes
-After=network.target
+Description=Indexer les nouveaux épisodes anime
+After=network.target mysql.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/scrapsama-index-new
-User=youruser
+User=votreuser
+WorkingDirectory=/home/votreuser
+Environment="DB_HOST=localhost"
+Environment="DB_PORT=3306"
+Environment="DB_NAME=scrapsama_db"
+Environment="DB_USER=scrapsama_user"
+Environment="DB_PASSWORD=votre_mot_de_passe"
+ExecStart=/home/votreuser/scrapsama-env/bin/scrapsama-index-new
+StandardOutput=append:/var/log/scrapsama.log
+StandardError=append:/var/log/scrapsama.log
+```
 
-# Create /etc/systemd/system/scrapsama-index-new.timer
+**Créer le timer:**
+```bash
+sudo nano /etc/systemd/system/scrapsama-index-new.timer
+```
+
+Contenu du fichier:
+```ini
 [Unit]
-Description=Run scrapsama-index-new every 6 hours
+Description=Exécuter scrapsama-index-new toutes les 6 heures
 
 [Timer]
 OnBootSec=15min
 OnUnitActiveSec=6h
+Persistent=true
 
 [Install]
 WantedBy=timers.target
-
-# Enable and start the timer
-sudo systemctl enable scrapsama-index-new.timer
-sudo systemctl start scrapsama-index-new.timer
 ```
 
-### Python API
+**Activer et démarrer:**
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable scrapsama-index-new.timer
+sudo systemctl start scrapsama-index-new.timer
 
-**Index a specific series:**
+# Vérifier le statut
+sudo systemctl status scrapsama-index-new.timer
+```
+
+### API Python
+
+**Indexer une série spécifique:**
 ```python
 import asyncio
-from scraper import AnimeSama, Database, index_serie, index_season, index_episode
+from scraper import AnimeSama, Database
 
 async def index_series(name):
-    # Search series
+    # Rechercher la série
     anime_sama = AnimeSama("https://anime-sama.fr/")
     catalogues = await anime_sama.search(name)
+    
+    if not catalogues:
+        print(f"Aucune série trouvée pour '{name}'")
+        return
+    
     catalogue = catalogues[0]
     
-    # Initialize database
+    # Initialiser la base de données
     db = Database()
     db.connect()
     db.initialize_schema()
     
-    # Index the series
+    # Indexer la série, les saisons et les épisodes
+    from scraper.database import index_serie, index_season
     serie_id = index_serie(catalogue, db)
     
-    # Index all seasons and episodes
     seasons = await catalogue.seasons()
     for season in seasons:
         season_id = index_season(season, serie_id, db)
         episodes = await season.episodes()
         for episode in episodes:
+            from scraper.database import index_episode
             index_episode(episode, season_id, db)
     
     db.close()
+    print(f"Série '{name}' indexée avec succès!")
 
+# Exécuter
 asyncio.run(index_series("one piece"))
 ```
 
-**Get new episodes from homepage:**
+**Récupérer les nouveaux épisodes:**
 ```python
 import asyncio
 from scraper import AnimeSama
@@ -181,92 +263,98 @@ async def get_new_episodes():
 asyncio.run(get_new_episodes())
 ```
 
-## Troubleshooting
+**Rechercher et lister les séries:**
+```python
+import asyncio
+from scraper import AnimeSama
 
-### Command not found in Docker
+async def search_anime(query):
+    anime_sama = AnimeSama("https://anime-sama.fr/")
+    results = await anime_sama.search(query)
+    
+    for catalogue in results:
+        print(f"Nom: {catalogue.name}")
+        print(f"URL: {catalogue.url}")
+        print(f"Genres: {', '.join(catalogue.genres)}")
+        print("---")
 
-If you get an error like `executable file not found in $PATH` when running a command:
-
-```bash
-docker compose run --rm app scrapsama-index-all
-# Error: executable file not found in $PATH
+asyncio.run(search_anime("naruto"))
 ```
 
-This means the Docker image needs to be rebuilt to include the new commands:
+## Schéma de la base de données
 
-```bash
-# Rebuild the Docker image
-docker compose build app
+La base de données comprend 5 tables principales:
 
-# Then run the command
-docker compose run --rm app scrapsama-index-all
-```
-
-## Database Schema
-
-The database consists of 5 main tables:
-
-**series table:**
-- id (PRIMARY KEY)
+**Table series:**
+- id (CLÉ PRIMAIRE)
 - name, url
 - alternative_names, genres, categories, languages (JSON)
 - image_url, advancement, correspondence, synopsis
 - is_mature (boolean)
 - created_at, updated_at
 
-**seasons table:**
-- id (PRIMARY KEY)
-- serie_id (FOREIGN KEY → series.id)
+**Table seasons:**
+- id (CLÉ PRIMAIRE)
+- serie_id (CLÉ ÉTRANGÈRE → series.id)
 - name, url
 - created_at, updated_at
 
-**episodes table:**
-- id (PRIMARY KEY)
-- season_id (FOREIGN KEY → seasons.id)
+**Table episodes:**
+- id (CLÉ PRIMAIRE)
+- season_id (CLÉ ÉTRANGÈRE → seasons.id)
 - serie_name, season_name, episode_name, episode_index, season_number
 - created_at, updated_at
 
-**players table:**
-- id (PRIMARY KEY)
-- episode_id (FOREIGN KEY → episodes.id)
+**Table players:**
+- id (CLÉ PRIMAIRE)
+- episode_id (CLÉ ÉTRANGÈRE → episodes.id)
 - language, player_url, player_hostname, player_order
 - created_at
 
-**logs table:**
-- id (PRIMARY KEY)
-- command (e.g., "index[series_name]", "index-all", "index-new")
-- new_series, new_seasons, new_episodes (count of newly indexed items)
-- error_count (number of errors encountered)
+**Table logs:**
+- id (CLÉ PRIMAIRE)
+- command (ex: "index[nom_série]", "index-all", "index-new")
+- new_series, new_seasons, new_episodes (nombre d'éléments nouvellement indexés)
+- error_count (nombre d'erreurs rencontrées)
 - created_at
 
-The logs table tracks all indexing operations, recording statistics about what was indexed and any errors encountered during the process.
+La table logs enregistre toutes les opérations d'indexation.
 
-## Web Interface
+## Dépannage
 
-The web application provides a user-friendly interface to browse and watch anime episodes.
+### Erreur de connexion à la base de données
 
-### Features
+Si vous obtenez une erreur de connexion:
+```bash
+# Vérifier que MySQL est démarré
+sudo systemctl status mysql
 
-- **Search**: Real-time search for anime series by name
-- **Browse**: View all available series with thumbnails and categories
-- **Series Page**: Detailed information including synopsis, genres, and available seasons
-- **Season Page**: List all episodes for a selected season with available languages
-- **Episode Player**: Select language and player to watch episodes directly in the browser
+# Vérifier les identifiants dans ~/.scrapsama_env
+source ~/.scrapsama_env
+echo $DB_HOST $DB_PORT $DB_NAME $DB_USER
+```
 
-### Pages
+### Commande non trouvée
 
-1. **Home Page** (`/`): Search bar and grid of available series
-2. **Series Detail** (`/series/<id>`): Series information and list of seasons
-3. **Season Detail** (`/season/<id>`): List of all episodes in the season
-4. **Episode Player** (`/episode/<id>`): Video player with language and player selection
+Si `scrapsama-index` n'est pas trouvé:
+```bash
+# Assurez-vous que l'environnement virtuel est activé
+source scrapsama-env/bin/activate  # ou source venv/bin/activate
 
-### API Endpoints
+# Vérifier que le package est installé
+pip list | grep scrapsama
+```
 
-- `GET /search?q=<query>`: Search for series by name
-- `GET /api/series`: List all series (limited to 100)
+### Erreur de permissions MySQL
 
-All player URLs stored in the database are accessible through the episode player interface.
+Si vous rencontrez des erreurs de permissions:
+```bash
+sudo mysql -u root -p
+GRANT ALL PRIVILEGES ON scrapsama_db.* TO 'scrapsama_user'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
 
-## License
+## Licence
 
 GPL-3.0
