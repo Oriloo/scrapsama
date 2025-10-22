@@ -164,12 +164,13 @@ async def index_new_episodes() -> None:
             
             # Check if season already exists in database to avoid re-indexing
             # For index-new, we only want to process genuinely new seasons
+            # Check by URL only as it uniquely identifies a season
             cursor = db._connection.cursor()
             try:
                 cursor.execute("""
                     SELECT id FROM seasons 
-                    WHERE serie_id = %s AND url = %s
-                """, (serie_id, base_season_url))
+                    WHERE url = %s
+                """, (base_season_url,))
                 existing_season = cursor.fetchone()
             finally:
                 cursor.close()
