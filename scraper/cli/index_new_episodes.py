@@ -162,9 +162,27 @@ async def index_new_episodes() -> None:
             
             console.print(f"[cyan]  → Targeting season: {target_season.name}[/]")
             
-            # Process the specific season only
+            # Check if season already exists in database to avoid re-indexing
+            # For index-new, we only want to process genuinely new seasons
+            cursor = db._connection.cursor()
+            try:
+                cursor.execute("""
+                    SELECT id FROM seasons 
+                    WHERE serie_id = %s AND url = %s
+                """, (serie_id, base_season_url))
+                existing_season = cursor.fetchone()
+            finally:
+                cursor.close()
+            
+            if existing_season:
+                season_id = existing_season[0]
+                console.print(f"  [green]✓ Season already exists in database (ID: {season_id}), skipping[/]")
+                # Skip this season as it's already been indexed
+                continue
+            
+            # Season doesn't exist, so we need to index it
             season = target_season
-            console.print(f"  [cyan]Processing season: {season.name}[/]")
+            console.print(f"  [cyan]Processing new season: {season.name}[/]")
             
             # Index the season
             season_id, is_new_season = index_season(season, serie_id, db)
