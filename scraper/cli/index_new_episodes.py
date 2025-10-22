@@ -7,7 +7,6 @@ and indexes them to the database. It's designed to be run regularly
 """
 import asyncio
 import logging
-import re
 import sys
 from typing import Optional
 
@@ -128,23 +127,34 @@ async def index_new_episodes() -> None:
             
             # Create Season object directly from release.page_url
             # This avoids fetching all seasons which is slow for series with many seasons
-            # The release.page_url already contains the complete season URL
+            # The release.page_url contains the season URL, but we need to truncate it
+            # to just the base season URL without language suffixes
             
-            # Extract season name from URL
-            # URL format: https://anime-sama.fr/catalogue/{serie}/{season}-vostfr/
-            season_match = re.search(r'/catalogue/[^/]+/([^/]+)/', release.page_url)
-            if not season_match:
-                console.print(f"[yellow]  ⚠ Could not extract season from URL: {release.page_url}[/]")
+            # Truncate URL to base season URL
+            # From: https://anime-sama.fr/catalogue/{serie}/{season}/vostfr/
+            # or:   https://anime-sama.fr/catalogue/{serie}/{season}-vostfr/
+            # To:   https://anime-sama.fr/catalogue/{serie}/{season}/
+            url_parts = release.page_url.rstrip('/').split('/')
+            
+            # URL structure: [https:, '', anime-sama.fr, catalogue, {serie}, {season}, ...]
+            # We want to keep up to and including the season part (index 5)
+            # and discard any language parts that follow
+            if len(url_parts) < 6:
+                console.print(f"[yellow]  ⚠ Invalid URL format: {release.page_url}[/]")
                 error_count += 1
                 continue
             
-            season_link = season_match.group(1)
-            # Remove language suffix to get clean season name
-            season_name = season_link.replace('-vostfr', '').replace('-vf', '').replace('-', ' ').title()
+            # Reconstruct base season URL (up to season part, then add trailing /)
+            base_season_url = '/'.join(url_parts[:6]) + '/'
             
-            # Create Season object directly from the release URL
+            # Extract season name from the URL part
+            season_part = url_parts[5]
+            # Remove any language suffix from season name (e.g., "saison11-vostfr" -> "saison11")
+            season_name = season_part.replace('-vostfr', '').replace('-vf', '').replace('-', ' ').title()
+            
+            # Create Season object with the truncated base URL
             target_season = Season(
-                url=release.page_url,
+                url=base_season_url,
                 name=season_name,
                 serie_name=catalogue.name,
                 client=anime_sama.client
