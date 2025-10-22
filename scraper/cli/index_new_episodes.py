@@ -7,6 +7,7 @@ and indexes them to the database. It's designed to be run regularly
 """
 import asyncio
 import logging
+import re
 import sys
 from typing import Optional
 
@@ -16,6 +17,7 @@ from rich.status import Status
 
 from ..top_level import AnimeSama
 from ..database import Database, index_episode, index_serie, index_season
+from ..season import Season
 
 console = get_console()
 console._highlight = False
@@ -124,87 +126,80 @@ async def index_new_episodes() -> None:
                 error_count += 1
                 continue
             
-            # Get all seasons
-            with spinner(f"Getting seasons for [blue]{catalogue.name}"):
-                try:
-                    seasons = await catalogue.seasons()
-                except Exception as e:
-                    error_msg = str(e)
-                    console.print(f"[red]  ✗ Error getting seasons: {error_msg}[/]")
-                    error_count += 1
-                    continue
+            # Create Season object directly from release.page_url
+            # This avoids fetching all seasons which is slow for series with many seasons
+            # The release.page_url already contains the complete season URL
             
-            if not seasons:
-                console.print(f"[yellow]  ⚠ No seasons found for {catalogue.name}[/]")
+            # Extract season name from URL
+            # URL format: https://anime-sama.fr/catalogue/{serie}/{season}-vostfr/
+            season_match = re.search(r'/catalogue/[^/]+/([^/]+)/', release.page_url)
+            if not season_match:
+                console.print(f"[yellow]  ⚠ Could not extract season from URL: {release.page_url}[/]")
+                error_count += 1
                 continue
             
-            console.print(f"[green]  ✓ Found {len(seasons)} season(s)[/]")
+            season_link = season_match.group(1)
+            # Remove language suffix to get clean season name
+            season_name = season_link.replace('-vostfr', '').replace('-vf', '').replace('-', ' ').title()
             
-            # Try to find the season from the release page_url
-            # The page_url contains the season URL
-            target_season = None
-            for season in seasons:
-                if season.url in release.page_url or release.page_url.startswith(season.url):
-                    target_season = season
-                    break
+            # Create Season object directly from the release URL
+            target_season = Season(
+                url=release.page_url,
+                name=season_name,
+                serie_name=catalogue.name,
+                client=anime_sama.client
+            )
             
-            if not target_season:
-                # If we can't match by URL, try to match by the descriptive text
-                # or just process all seasons (safer option)
-                console.print("[yellow]  ⚠ Could not identify specific season, indexing all seasons[/]")
-                seasons_to_process = seasons
-            else:
-                console.print(f"[cyan]  → Found matching season: {target_season.name}[/]")
-                seasons_to_process = [target_season]
+            console.print(f"[cyan]  → Targeting season: {target_season.name}[/]")
             
-            # Process selected seasons
-            for season in seasons_to_process:
-                console.print(f"  [cyan]Processing season: {season.name}[/]")
-                
-                # Index the season
-                season_id, is_new_season = index_season(season, serie_id, db)
-                if not season_id:
-                    console.print(f"    [red]✗ Failed to index season: {season.name}[/]")
+            # Process the specific season only
+            season = target_season
+            console.print(f"  [cyan]Processing season: {season.name}[/]")
+            
+            # Index the season
+            season_id, is_new_season = index_season(season, serie_id, db)
+            if not season_id:
+                console.print(f"    [red]✗ Failed to index season: {season.name}[/]")
+                error_count += 1
+                continue
+            
+            console.print(f"    [green]✓ Season {'created' if is_new_season else 'updated'} (ID: {season_id})[/]")
+            if is_new_season:
+                new_seasons_count += 1
+            
+            # Get and index episodes
+            with spinner(f"Getting episodes for [blue]{season.name}"):
+                try:
+                    episodes = await season.episodes()
+                except Exception as e:
+                    error_msg = str(e)
+                    console.print(f"    [red]✗ Error getting episodes: {error_msg}[/]")
                     error_count += 1
                     continue
-                
-                console.print(f"    [green]✓ Season {'created' if is_new_season else 'updated'} (ID: {season_id})[/]")
-                if is_new_season:
-                    new_seasons_count += 1
-                
-                # Get and index episodes
-                with spinner(f"Getting episodes for [blue]{season.name}"):
-                    try:
-                        episodes = await season.episodes()
-                    except Exception as e:
-                        error_msg = str(e)
-                        console.print(f"    [red]✗ Error getting episodes: {error_msg}[/]")
+            
+            if not episodes:
+                console.print(f"    [yellow]⚠ No episodes found for {season.name}[/]")
+                continue
+            
+            console.print(f"    [green]✓ Found {len(episodes)} episode(s)[/]")
+            
+            # Index each episode
+            for episode_num, episode in enumerate(episodes, 1):
+                total_processed += 1
+                try:
+                    success, is_new_episode = index_episode(episode, season_id, db)
+                    if success:
+                        total_indexed += 1
+                        if is_new_episode:
+                            new_episodes_count += 1
+                        status = "created" if is_new_episode else "updated"
+                        console.print(f"      [green]✓[/] [{episode_num}/{len(episodes)}] {episode.name} ({status})")
+                    else:
                         error_count += 1
-                        continue
-                
-                if not episodes:
-                    console.print(f"    [yellow]⚠ No episodes found for {season.name}[/]")
-                    continue
-                
-                console.print(f"    [green]✓ Found {len(episodes)} episode(s)[/]")
-                
-                # Index each episode
-                for episode_num, episode in enumerate(episodes, 1):
-                    total_processed += 1
-                    try:
-                        success, is_new_episode = index_episode(episode, season_id, db)
-                        if success:
-                            total_indexed += 1
-                            if is_new_episode:
-                                new_episodes_count += 1
-                            status = "created" if is_new_episode else "updated"
-                            console.print(f"      [green]✓[/] [{episode_num}/{len(episodes)}] {episode.name} ({status})")
-                        else:
-                            error_count += 1
-                            console.print(f"      [red]✗[/] [{episode_num}/{len(episodes)}] {episode.name} - Failed to index")
-                    except Exception as e:
-                        error_count += 1
-                        console.print(f"      [red]✗[/] [{episode_num}/{len(episodes)}] {episode.name} - Error: {e}")
+                        console.print(f"      [red]✗[/] [{episode_num}/{len(episodes)}] {episode.name} - Failed to index")
+                except Exception as e:
+                    error_count += 1
+                    console.print(f"      [red]✗[/] [{episode_num}/{len(episodes)}] {episode.name} - Error: {e}")
         
         except Exception as e:
             error_msg = str(e)
