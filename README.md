@@ -18,24 +18,9 @@ API Python pour indexer les séries anime depuis anime-sama.fr dans une base de 
 
 ### Étape 1: Installer Python et les dépendances système
 
-**Sur Ubuntu/Debian:**
 ```bash
 sudo apt update
 sudo apt install python3 python3-pip python3-venv mysql-server
-```
-
-**Sur Fedora/RHEL:**
-```bash
-sudo dnf install python3 python3-pip mysql-server
-sudo systemctl start mysqld
-sudo systemctl enable mysqld
-```
-
-**Sur Arch Linux:**
-```bash
-sudo pacman -S python python-pip mysql
-sudo systemctl start mysqld
-sudo systemctl enable mysqld
 ```
 
 ### Étape 2: Configurer MySQL
@@ -57,17 +42,6 @@ EXIT;
 
 ### Étape 3: Installer Scrapsama
 
-**Option A: Installation depuis PyPI (recommandé)**
-```bash
-# Créer un environnement virtuel
-python3 -m venv scrapsama-env
-source scrapsama-env/bin/activate
-
-# Installer le package
-pip install scrapsama
-```
-
-**Option B: Installation depuis le code source**
 ```bash
 # Cloner le dépôt
 git clone https://github.com/Oriloo/scrapsama.git
