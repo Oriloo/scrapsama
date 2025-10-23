@@ -39,6 +39,20 @@ class AnimeSama:
     def __init__(self, site_url: str, client: AsyncClient | None = None) -> None:
         self.site_url = site_url
         self.client = client or create_client()
+        self._warmed_up = False
+    
+    async def _warmup(self) -> None:
+        """
+        Make an initial request to the homepage to get past Cloudflare's initial checks.
+        This helps establish cookies and bypass bot detection.
+        """
+        if not self._warmed_up:
+            try:
+                await self.client.get(self.site_url)
+                self._warmed_up = True
+            except Exception:
+                # If warmup fails, continue anyway
+                pass
 
     async def _get_homepage_section(self, section_name: str, how_many: int = 1) -> str:
         homepage = await self.client.get(self.site_url)
@@ -140,6 +154,9 @@ class AnimeSama:
             )
 
     async def search(self, query: str) -> list[Catalogue]:
+        # Make an initial warmup request to establish cookies and bypass Cloudflare
+        await self._warmup()
+        
         response = (
             await self.client.get(f"{self.site_url}catalogue/?search={query}")
         ).raise_for_status()
@@ -168,6 +185,9 @@ class AnimeSama:
         return catalogues
 
     async def search_iter(self, query: str) -> AsyncIterator[Catalogue]:
+        # Make an initial warmup request to establish cookies and bypass Cloudflare
+        await self._warmup()
+        
         response = (
             await self.client.get(f"{self.site_url}catalogue/?search={query}")
         ).raise_for_status()
