@@ -76,4 +76,4 @@ def create_client() -> AsyncClient:
         "Cache-Control": "max-age=0",
     }
     
-    return AsyncClient(headers=headers, follow_redirects=True)
+    return AsyncClient(headers=headers, follow_redirects=True, timeout=30.0)
