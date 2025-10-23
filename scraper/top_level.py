@@ -11,7 +11,7 @@ from httpx import AsyncClient
 from .episode import Episode
 from .season import Season
 from .langs import Lang, flags
-from .utils import filter_literal, is_Literal
+from .utils import filter_literal, is_Literal, create_client
 from .catalogue import Catalogue, Category
 
 
@@ -38,7 +38,7 @@ class EpisodeRelease:
 class AnimeSama:
     def __init__(self, site_url: str, client: AsyncClient | None = None) -> None:
         self.site_url = site_url
-        self.client = client or AsyncClient()
+        self.client = client or create_client()
 
     async def _get_homepage_section(self, section_name: str, how_many: int = 1) -> str:
         homepage = await self.client.get(self.site_url)

@@ -4,7 +4,7 @@ from typing import Any, Literal, cast
 
 from httpx import AsyncClient
 
-from .utils import remove_some_js_comments
+from .utils import remove_some_js_comments, create_client
 from .season import Season
 from .langs import flags, Lang
 
@@ -39,7 +39,7 @@ class Catalogue:
 
         self.url = url + "/" if url[-1] != "/" else url
         self.site_url = "/".join(url.split("/")[:3]) + "/"
-        self.client = client or AsyncClient()
+        self.client = client or create_client()
 
         self.name = name or url.split("/")[-2]
 
