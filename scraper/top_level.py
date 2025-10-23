@@ -6,7 +6,7 @@ import logging
 import re
 from typing import Any, cast
 
-from httpx import AsyncClient
+from curl_cffi.requests import AsyncSession
 
 from .episode import Episode
 from .season import Season
@@ -36,14 +36,14 @@ class EpisodeRelease:
 
 
 class AnimeSama:
-    def __init__(self, site_url: str, client: AsyncClient | None = None) -> None:
+    def __init__(self, site_url: str, client: AsyncSession | None = None) -> None:
         self.site_url = site_url
-        self.client = client or AsyncClient()
+        self.client = client or AsyncSession(impersonate="chrome")
 
     async def _get_homepage_section(self, section_name: str, how_many: int = 1) -> str:
         homepage = await self.client.get(self.site_url)
 
-        if not homepage.is_success:
+        if not homepage.ok:
             return ""
 
         sections = homepage.text.split("<!--")
@@ -160,7 +160,7 @@ class AnimeSama:
 
         catalogues = []
         for response in responses:
-            if not response.is_success:
+            if not response.ok:
                 continue
 
             catalogues += list(self._yield_catalogues_from(response.text))
@@ -187,7 +187,7 @@ class AnimeSama:
                 f"{self.site_url}catalogue/?search={query}&page={number}"
             )
 
-            if not response.is_success:
+            if not response.ok:
                 continue
 
             for catalogue in self._yield_catalogues_from(response.text):

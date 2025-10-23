@@ -48,12 +48,12 @@ if __name__ == "__main__":
     import asyncio
     from pprint import pprint
 
-    import httpx
+    from curl_cffi import requests
 
     from .top_level import AnimeSama
 
     SCRIPT_VIDEO_URL = "https://anime-sama.fr/js/contenu/script_videos.js"
-    page = httpx.get(SCRIPT_VIDEO_URL).text
+    page = requests.get(SCRIPT_VIDEO_URL).text
     langs = {}
 
     matchs = re.findall(r"if\((.+)\){langue = \"(.+)\";}", page)
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
         vostfr_url = (await catalogue.seasons())[0].url + "vostfr/"
         response = await catalogue.client.get(vostfr_url)
-        if not response.is_success:
+        if not response.ok:
             raise
         print(set(re.findall(r"src=\".+flag_(.+?)\.png\"", response.text)))
 

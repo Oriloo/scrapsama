@@ -5,7 +5,7 @@ import re
 import asyncio
 from typing import Any, cast, get_args
 
-from httpx import AsyncClient
+from curl_cffi.requests import AsyncSession
 
 from .langs import LangId, lang2ids, flagid2lang
 from .episode import Episode, Players, Languages
@@ -25,7 +25,7 @@ class Season:
         url: str,
         name: str = "",
         serie_name: str = "",
-        client: AsyncClient | None = None,
+        client: AsyncSession | None = None,
     ) -> None:
         self.url = url
         self.site_url = "/".join(url.split("/")[:3]) + "/"
@@ -33,14 +33,14 @@ class Season:
         self.name = name or url.split("/")[-2]
         self.serie_name = serie_name or url.split("/")[-3]
 
-        self.client = client or AsyncClient()
+        self.client = client or AsyncSession(impersonate="chrome")
 
     async def get_all_pages(self) -> list[SeasonLangPage]:
         async def process_page(lang_id: LangId) -> SeasonLangPage:
             page_url = self.url + lang_id + "/"
             response = await self.client.get(page_url)
 
-            if not response.is_success:
+            if not response.ok:
                 return SeasonLangPage(lang_id=lang_id)
 
             html = response.text
@@ -51,7 +51,7 @@ class Season:
 
             episodes_js = await self.client.get(page_url + match_url.group(0))
 
-            if not episodes_js.is_success:
+            if not episodes_js.ok:
                 return SeasonLangPage(lang_id=lang_id)
 
             return SeasonLangPage(

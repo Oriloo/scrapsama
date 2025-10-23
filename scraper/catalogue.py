@@ -2,7 +2,7 @@ from collections.abc import Sequence
 import re
 from typing import Any, Literal, cast
 
-from httpx import AsyncClient
+from curl_cffi.requests import AsyncSession
 
 from .utils import remove_some_js_comments
 from .season import Season
@@ -26,7 +26,7 @@ class Catalogue:
         categories: set[Category] | None = None,
         languages: set[Lang] | None = None,
         image_url: str = "",
-        client: AsyncClient | None = None,
+        client: AsyncSession | None = None,
     ) -> None:
         if alternative_names is None:
             alternative_names = []
@@ -39,7 +39,7 @@ class Catalogue:
 
         self.url = url + "/" if url[-1] != "/" else url
         self.site_url = "/".join(url.split("/")[:3]) + "/"
-        self.client = client or AsyncClient()
+        self.client = client or AsyncSession(impersonate="chrome")
 
         self.name = name or url.split("/")[-2]
 
@@ -56,7 +56,7 @@ class Catalogue:
 
         response = await self.client.get(self.url)
 
-        if not response.is_success:
+        if not response.ok:
             self._page = ""
         else:
             self._page = response.text
