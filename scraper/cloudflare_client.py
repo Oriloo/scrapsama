@@ -5,7 +5,6 @@ This module provides an AsyncClient that uses cloudscraper to obtain
 the necessary cookies and headers to bypass Cloudflare's bot detection.
 """
 
-import asyncio
 from typing import Any
 from httpx import AsyncClient
 import cloudscraper
@@ -31,9 +30,12 @@ def create_cloudflare_client(**kwargs: Any) -> AsyncClient:
     # Extract headers from cloudscraper session
     headers = dict(scraper.headers)
     
-    # Merge with any user-provided headers
-    if 'headers' in kwargs:
-        headers.update(kwargs.pop('headers'))
+    # Merge with any user-provided headers (without modifying original kwargs)
+    user_headers = kwargs.get('headers', {})
+    if user_headers:
+        headers.update(user_headers)
+        # Create a copy of kwargs without 'headers' key
+        kwargs = {k: v for k, v in kwargs.items() if k != 'headers'}
     
     # Create AsyncClient with cloudscraper headers
     return AsyncClient(headers=headers, **kwargs)
