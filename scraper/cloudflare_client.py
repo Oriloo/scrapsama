@@ -7,7 +7,6 @@ the necessary cookies and headers to bypass Cloudflare's bot detection.
 
 from typing import Any
 from httpx import AsyncClient
-import cloudscraper
 
 
 def create_cloudflare_client(**kwargs: Any) -> AsyncClient:
@@ -18,24 +17,41 @@ def create_cloudflare_client(**kwargs: Any) -> AsyncClient:
     that can bypass Cloudflare's protection, then creates an httpx AsyncClient
     with those headers.
     
+    If cloudscraper is not installed, falls back to a regular AsyncClient.
+    
     Args:
         **kwargs: Additional keyword arguments to pass to AsyncClient constructor
         
     Returns:
         AsyncClient: An httpx AsyncClient configured with cloudscraper headers
     """
-    # Create a cloudscraper session to get proper headers
-    scraper = cloudscraper.create_scraper()
-    
-    # Extract headers from cloudscraper session
-    headers = dict(scraper.headers)
-    
-    # Merge with any user-provided headers (without modifying original kwargs)
-    user_headers = kwargs.get('headers', {})
-    if user_headers:
-        headers.update(user_headers)
-        # Create a copy of kwargs without 'headers' key
-        kwargs = {k: v for k, v in kwargs.items() if k != 'headers'}
-    
-    # Create AsyncClient with cloudscraper headers
-    return AsyncClient(headers=headers, **kwargs)
+    try:
+        import cloudscraper
+        
+        # Create a cloudscraper session to get proper headers
+        scraper = cloudscraper.create_scraper()
+        
+        # Extract headers from cloudscraper session
+        headers = dict(scraper.headers)
+        
+        # Merge with any user-provided headers (without modifying original kwargs)
+        user_headers = kwargs.get('headers', {})
+        if user_headers:
+            headers.update(user_headers)
+            # Create a copy of kwargs without 'headers' key
+            kwargs = {k: v for k, v in kwargs.items() if k != 'headers'}
+        
+        # Create AsyncClient with cloudscraper headers
+        return AsyncClient(headers=headers, **kwargs)
+    except ImportError:
+        # Fallback to regular AsyncClient if cloudscraper is not installed
+        # This allows the code to work without cloudscraper, though it may
+        # be blocked by Cloudflare
+        import warnings
+        warnings.warn(
+            "cloudscraper is not installed. Requests may be blocked by Cloudflare. "
+            "Install it with: pip install cloudscraper",
+            ImportWarning,
+            stacklevel=2
+        )
+        return AsyncClient(**kwargs)
