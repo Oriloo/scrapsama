@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  scraper:
+    build: .
+    image: scrapsama:latest
+    container_name: scrapsama-scraper
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+    # Mount .env file if you prefer
+    # volumes:
+    #   - ./.env:/app/.env:ro
+    restart: unless-stopped
+    # Default command is scrapsama-index-new
+    # Override with one of:
+    # command: scrapsama-index
+    # command: scrapsama-index-all
+    # command: scrapsama-index-new
