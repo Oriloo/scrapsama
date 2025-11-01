@@ -50,10 +50,9 @@ class Catalogue:
         self.url = url + "/" if url[-1] != "/" else url
         self.site_url = "/".join(url.split("/")[:3]) + "/"
         if client is None:
-            if FLARESOLVERR_AVAILABLE:
-                self.client = create_client(use_flaresolverr=True)
-            else:
-                self.client = AsyncClient()
+            # Don't use FlareSolverr by default for Catalogue
+            # User can pass a custom client if needed
+            self.client = AsyncClient()
         else:
             self.client = client
 

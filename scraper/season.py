@@ -44,10 +44,9 @@ class Season:
         self.serie_name = serie_name or url.split("/")[-3]
 
         if client is None:
-            if FLARESOLVERR_AVAILABLE:
-                self.client = create_client(use_flaresolverr=True)
-            else:
-                self.client = AsyncClient()
+            # Don't use FlareSolverr by default for Season
+            # User can pass a custom client if needed
+            self.client = AsyncClient()
         else:
             self.client = client
 

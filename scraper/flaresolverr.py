@@ -114,14 +114,14 @@ class FlareSolverrTransport(httpx.AsyncHTTPTransport):
 
 
 def create_client(
-    use_flaresolverr: bool = True,
+    use_flaresolverr: bool = False,  # Changed default to False for safety
     flaresolverr_url: Optional[str] = None,
     **kwargs
 ) -> httpx.AsyncClient:
     """Create an httpx AsyncClient with optional FlareSolverr support.
     
     Args:
-        use_flaresolverr: Whether to enable FlareSolverr (default: True if URL is available)
+        use_flaresolverr: Whether to enable FlareSolverr (default: False)
         flaresolverr_url: URL of FlareSolverr API (uses FLARESOLVERR_URL env var if not provided)
         **kwargs: Additional arguments passed to AsyncClient
         

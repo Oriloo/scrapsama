@@ -47,7 +47,7 @@ class AnimeSama:
         self, 
         site_url: str, 
         client: AsyncClient | None = None,
-        use_flaresolverr: bool = True
+        use_flaresolverr: bool = False  # Changed default to False
     ) -> None:
         self.site_url = site_url
         if client is None:

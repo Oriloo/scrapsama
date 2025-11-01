@@ -100,6 +100,22 @@ Les variables d'environnement sont configurées dans le fichier `.env` pour dock
 
 **Note** : Le fichier `.env` n'est pas copié dans le conteneur Docker. Les variables sont automatiquement injectées par docker-compose au démarrage du conteneur.
 
+### FlareSolverr
+
+FlareSolverr est disponible pour contourner la protection Cloudflare si nécessaire. **Par défaut, il n'est pas utilisé** car anime-sama.fr fonctionne normalement sans.
+
+Pour activer FlareSolverr dans votre code :
+```python
+from scraper import AnimeSama, create_client
+
+# Option 1 : Activer FlareSolverr pour AnimeSama
+anime = AnimeSama("https://anime-sama.fr/", use_flaresolverr=True)
+
+# Option 2 : Créer un client personnalisé
+client = create_client(use_flaresolverr=True)
+anime = AnimeSama("https://anime-sama.fr/", client=client)
+```
+
 ### Sans Docker
 
 Pour l'installation manuelle, créez un fichier `.env` à la racine du projet avec les mêmes variables (adaptez `DB_HOST` selon votre configuration locale).
