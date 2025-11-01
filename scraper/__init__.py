@@ -6,6 +6,14 @@ from .langs import Lang, LangId, lang2ids, id2lang, flags
 from .database import Database, DatabaseConfig, index_episode
 
 try:
+    from .flaresolverr import create_client, FlareSolverrTransport
+    FLARESOLVERR_AVAILABLE = True
+except ImportError:
+    FLARESOLVERR_AVAILABLE = False
+    create_client = None
+    FlareSolverrTransport = None
+
+try:
     from .cli.index_series import main
 except ImportError:
     import sys
@@ -37,6 +45,9 @@ __all__ = [
     "Database",
     "DatabaseConfig",
     "index_episode",
+    "create_client",
+    "FlareSolverrTransport",
+    "FLARESOLVERR_AVAILABLE",
 ]
 
 """__locals = locals()

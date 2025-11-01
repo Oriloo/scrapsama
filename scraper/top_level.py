@@ -14,6 +14,13 @@ from .langs import Lang, flags
 from .utils import filter_literal, is_Literal
 from .catalogue import Catalogue, Category
 
+try:
+    from .flaresolverr import create_client
+    FLARESOLVERR_AVAILABLE = True
+except ImportError:
+    FLARESOLVERR_AVAILABLE = False
+    logger.warning("FlareSolverr module not available, using standard httpx client")
+
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +43,20 @@ class EpisodeRelease:
 
 
 class AnimeSama:
-    def __init__(self, site_url: str, client: AsyncClient | None = None) -> None:
+    def __init__(
+        self, 
+        site_url: str, 
+        client: AsyncClient | None = None,
+        use_flaresolverr: bool = True
+    ) -> None:
         self.site_url = site_url
-        self.client = client or AsyncClient()
+        if client is None:
+            if FLARESOLVERR_AVAILABLE and use_flaresolverr:
+                self.client = create_client(use_flaresolverr=True)
+            else:
+                self.client = AsyncClient()
+        else:
+            self.client = client
 
     async def _get_homepage_section(self, section_name: str, how_many: int = 1) -> str:
         homepage = await self.client.get(self.site_url)

@@ -8,6 +8,12 @@ from .utils import remove_some_js_comments
 from .season import Season
 from .langs import flags, Lang
 
+try:
+    from .flaresolverr import create_client
+    FLARESOLVERR_AVAILABLE = True
+except ImportError:
+    FLARESOLVERR_AVAILABLE = False
+
 
 # Oversight from anime-sama that we should handle
 # 'Animes' instead of 'Anime' seen in Cyberpunk: Edgerunners and Valkyrie Apocalypse
@@ -39,7 +45,13 @@ class Catalogue:
 
         self.url = url + "/" if url[-1] != "/" else url
         self.site_url = "/".join(url.split("/")[:3]) + "/"
-        self.client = client or AsyncClient()
+        if client is None:
+            if FLARESOLVERR_AVAILABLE:
+                self.client = create_client(use_flaresolverr=True)
+            else:
+                self.client = AsyncClient()
+        else:
+            self.client = client
 
         self.name = name or url.split("/")[-2]
 

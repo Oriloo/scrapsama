@@ -11,6 +11,12 @@ from .langs import LangId, lang2ids, flagid2lang
 from .episode import Episode, Players, Languages
 from .utils import remove_some_js_comments, zip_varlen, split_and_strip
 
+try:
+    from .flaresolverr import create_client
+    FLARESOLVERR_AVAILABLE = True
+except ImportError:
+    FLARESOLVERR_AVAILABLE = False
+
 
 @dataclass
 class SeasonLangPage:
@@ -33,7 +39,13 @@ class Season:
         self.name = name or url.split("/")[-2]
         self.serie_name = serie_name or url.split("/")[-3]
 
-        self.client = client or AsyncClient()
+        if client is None:
+            if FLARESOLVERR_AVAILABLE:
+                self.client = create_client(use_flaresolverr=True)
+            else:
+                self.client = AsyncClient()
+        else:
+            self.client = client
 
     async def get_all_pages(self) -> list[SeasonLangPage]:
         async def process_page(lang_id: LangId) -> SeasonLangPage:
