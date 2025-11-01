@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+import logging
 import re
 from typing import Any, Literal, cast
 
@@ -8,11 +9,14 @@ from .utils import remove_some_js_comments
 from .season import Season
 from .langs import flags, Lang
 
+logger = logging.getLogger(__name__)
+
 try:
     from .flaresolverr import create_client
     FLARESOLVERR_AVAILABLE = True
 except ImportError:
     FLARESOLVERR_AVAILABLE = False
+    logger.debug("FlareSolverr module not available, using standard httpx client")
 
 
 # Oversight from anime-sama that we should handle

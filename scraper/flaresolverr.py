@@ -74,7 +74,11 @@ class FlareSolverrTransport(httpx.AsyncHTTPTransport):
         # Add POST data if present
         if request.method == "POST" and request.content:
             payload["cmd"] = "request.post"
-            payload["postData"] = request.content.decode() if isinstance(request.content, bytes) else request.content
+            try:
+                # Try to decode as UTF-8, fallback to latin-1 if that fails
+                payload["postData"] = request.content.decode('utf-8') if isinstance(request.content, bytes) else request.content
+            except UnicodeDecodeError:
+                payload["postData"] = request.content.decode('latin-1') if isinstance(request.content, bytes) else request.content
         
         # Send request to FlareSolverr
         flare_response = await self._flaresolverr_client.post(

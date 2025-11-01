@@ -1,6 +1,7 @@
 from ast import literal_eval
 from dataclasses import dataclass, replace
 from functools import reduce
+import logging
 import re
 import asyncio
 from typing import Any, cast, get_args
@@ -11,11 +12,14 @@ from .langs import LangId, lang2ids, flagid2lang
 from .episode import Episode, Players, Languages
 from .utils import remove_some_js_comments, zip_varlen, split_and_strip
 
+logger = logging.getLogger(__name__)
+
 try:
     from .flaresolverr import create_client
     FLARESOLVERR_AVAILABLE = True
 except ImportError:
     FLARESOLVERR_AVAILABLE = False
+    logger.debug("FlareSolverr module not available, using standard httpx client")
 
 
 @dataclass

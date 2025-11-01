@@ -14,15 +14,15 @@ from .langs import Lang, flags
 from .utils import filter_literal, is_Literal
 from .catalogue import Catalogue, Category
 
+
+logger = logging.getLogger(__name__)
+
 try:
     from .flaresolverr import create_client
     FLARESOLVERR_AVAILABLE = True
 except ImportError:
     FLARESOLVERR_AVAILABLE = False
     logger.warning("FlareSolverr module not available, using standard httpx client")
-
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
