@@ -14,10 +14,13 @@ except ImportError as e:
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ENV_PATH = os.path.join(PROJECT_ROOT, ".env")
 
-if not os.path.isfile(ENV_PATH):
-    logger.error(f"Fichier `.env` introuvable à: {ENV_PATH}")
-
-load_dotenv(dotenv_path=ENV_PATH, override=True)
+# Load .env file if it exists (for local development)
+# In Docker, environment variables are set by docker-compose, so the file is optional
+if os.path.isfile(ENV_PATH):
+    load_dotenv(dotenv_path=ENV_PATH, override=True)
+    logger.debug(f"Loaded environment variables from {ENV_PATH}")
+else:
+    logger.debug(f"No .env file found at {ENV_PATH}, using environment variables")
 
 
 def _require_env(key: str) -> str:

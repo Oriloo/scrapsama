@@ -87,7 +87,9 @@ docker-compose up -d scraper
 
 ## Configuration
 
-Les variables d'environnement sont configurées dans le fichier `.env` :
+### Avec Docker
+
+Les variables d'environnement sont configurées dans le fichier `.env` pour docker-compose :
 
 - `DB_HOST` : Hôte de la base de données (par défaut: `db`)
 - `DB_PORT` : Port de la base de données (par défaut: `3306`)
@@ -95,6 +97,12 @@ Les variables d'environnement sont configurées dans le fichier `.env` :
 - `DB_USER` : Utilisateur de la base de données (par défaut: `scrapsama_user`)
 - `DB_PASS` : Mot de passe de la base de données (par défaut: `scrapsama_pass`)
 - `FLARESOLVERR_URL` : URL de FlareSolverr (par défaut: `http://flaresolverr:8191/v1`)
+
+**Note** : Le fichier `.env` n'est pas copié dans le conteneur Docker. Les variables sont automatiquement injectées par docker-compose au démarrage du conteneur.
+
+### Sans Docker
+
+Pour l'installation manuelle, créez un fichier `.env` à la racine du projet avec les mêmes variables (adaptez `DB_HOST` selon votre configuration locale).
 
 ## Licence
 
