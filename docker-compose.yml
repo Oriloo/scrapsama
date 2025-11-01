@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: scrapsama-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-scrapsama}
+      MYSQL_USER: ${DB_USER:-scrapsama_user}
+      MYSQL_PASSWORD: ${DB_PASS:-scrapsama_pass}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - scrapsama-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FlareSolverr - bypass Cloudflare protection
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: scrapsama-flaresolverr
+    restart: unless-stopped
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_HTML=${LOG_HTML:-false}
+      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
+    ports:
+      - "${FLARESOLVERR_PORT:-8191}:8191"
+    networks:
+      - scrapsama-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8191/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Scraper Application
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scrapsama-scraper
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME:-scrapsama}
+      - DB_USER=${DB_USER:-scrapsama_user}
+      - DB_PASS=${DB_PASS:-scrapsama_pass}
+      - FLARESOLVERR_URL=http://flaresolverr:8191/v1
+    depends_on:
+      db:
+        condition: service_healthy
+      flaresolverr:
+        condition: service_healthy
+    networks:
+      - scrapsama-network
+    volumes:
+      - ./scraper:/app/scraper
+    # Override command to keep container running for manual execution
+    command: tail -f /dev/null
+
+networks:
+  scrapsama-network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
