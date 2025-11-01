@@ -1,6 +1,5 @@
 # Example Docker Compose file with environment variables inline
 # Copy this to docker-compose.override.yml and edit the values
-version: '3.8'
 
 services:
   scraper:

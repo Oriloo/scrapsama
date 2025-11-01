@@ -44,11 +44,6 @@ Thumbs.db
 .gitignore
 .gitattributes
 
-# Docker
-Dockerfile
-.dockerignore
-docker-compose*.yml
-
 # Environment
 .env
 
@@ -59,7 +54,8 @@ tests/
 .coverage
 htmlcov/
 
-# Documentation
+# Documentation (keep only essential docs in the image)
 docs/
 *.md
 !README.md
+!DOCKER.md
