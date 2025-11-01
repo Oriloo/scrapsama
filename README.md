@@ -71,6 +71,17 @@ docker-compose run --rm scraper scrapsama-index
 docker-compose run --rm scraper scrapsama-index-all
 ```
 
+Avec Makefile (encore plus simple) :
+```bash
+make build      # Build l'image
+make run        # Indexer une série (interactif)
+make run-all    # Indexer toutes les séries
+make run-new    # Indexer les nouveaux épisodes
+make help       # Voir toutes les commandes
+```
+
+📚 Pour plus de détails sur Docker, consultez [DOCKER.md](DOCKER.md)
+
 ## Configuration
 
 Le scraper nécessite une connexion à une base de données MySQL. Configurez les variables d'environnement suivantes dans un fichier `.env` :
