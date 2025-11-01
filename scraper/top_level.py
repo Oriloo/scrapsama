@@ -22,7 +22,7 @@ try:
     FLARESOLVERR_AVAILABLE = True
 except ImportError:
     FLARESOLVERR_AVAILABLE = False
-    logger.warning("FlareSolverr module not available, using standard httpx client")
+    logger.info("FlareSolverr module not available, using standard httpx client")
 
 
 @dataclass(frozen=True)
