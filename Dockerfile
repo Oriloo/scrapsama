@@ -9,13 +9,15 @@ RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements file
+# Copy requirements file and project metadata
 COPY requirements.txt .
 COPY pyproject.toml .
+COPY README.md .
+COPY LICENSE .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir -e .[cli,database]
+# Install Python dependencies with trusted host for environments with SSL issues
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt && \
+    pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -e .[cli,database]
 
 # Copy the application code
 COPY scraper/ ./scraper/
