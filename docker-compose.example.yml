@@ -1,0 +1,15 @@
+# Example Docker Compose file with environment variables inline
+# Copy this to docker-compose.override.yml and edit the values
+version: '3.8'
+
+services:
+  scraper:
+    environment:
+      - DB_HOST=your-mysql-host
+      - DB_PORT=3306
+      - DB_NAME=scrapsama
+      - DB_USER=your-username
+      - DB_PASS=your-password
+    # Or mount your .env file:
+    # volumes:
+    #   - ./.env:/app/.env:ro
