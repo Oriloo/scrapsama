@@ -44,8 +44,8 @@ async def index_all_available_series() -> None:
         return
     
     # Get all available series
-    with spinner("Fetching all available series from anime-sama.fr"):
-        anime_sama = AnimeSama("https://anime-sama.fr/")
+    with spinner("Fetching all available series from anime-sama.org"):
+        anime_sama = AnimeSama("https://anime-sama.org/")
         catalogues = await anime_sama.all_catalogues()
     
     if not catalogues:

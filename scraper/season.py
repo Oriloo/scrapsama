@@ -10,6 +10,7 @@ from httpx import AsyncClient
 from .langs import LangId, lang2ids, flagid2lang
 from .episode import Episode, Players, Languages
 from .utils import remove_some_js_comments, zip_varlen, split_and_strip
+from .flaresolverr_client import create_client
 
 
 @dataclass
@@ -33,7 +34,7 @@ class Season:
         self.name = name or url.split("/")[-2]
         self.serie_name = serie_name or url.split("/")[-3]
 
-        self.client = client or AsyncClient()
+        self.client = client or create_client()
 
     async def get_all_pages(self) -> list[SeasonLangPage]:
         async def process_page(lang_id: LangId) -> SeasonLangPage:
@@ -124,7 +125,7 @@ class Season:
                 case "creerListe":
                     if len(args) < 2:
                         # Only seen on Dragon Ball GT (Film), Junji Ito Collection (Saison 1) and Orange (Film)
-                        # Surely a small oversight in anime-sama.fr
+                        # Surely a small oversight in anime-sama.org
                         # So it is undefined but do nothing is generaly the good reaction
                         continue
 
