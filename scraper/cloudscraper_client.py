@@ -56,7 +56,6 @@ class AsyncCloudscraperClient:
                 'desktop': True
             }
         )
-        self._loop = asyncio.get_event_loop()
     
     async def get(self, url: str, **kwargs: Any) -> CloudscraperResponse:
         """
@@ -70,8 +69,10 @@ class AsyncCloudscraperClient:
             CloudscraperResponse: Response object compatible with httpx.Response
         """
         # Run the synchronous cloudscraper request in a thread pool
+        # Use get_running_loop() to get the current event loop at runtime
+        loop = asyncio.get_running_loop()
         func = partial(self._scraper.get, url, **kwargs)
-        response = await self._loop.run_in_executor(None, func)
+        response = await loop.run_in_executor(None, func)
         return CloudscraperResponse(response)
     
     async def __aenter__(self) -> "AsyncCloudscraperClient":
@@ -81,5 +82,6 @@ class AsyncCloudscraperClient:
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Context manager exit."""
         # Close the session if needed
+        loop = asyncio.get_running_loop()
         if hasattr(self._scraper, 'close'):
-            await self._loop.run_in_executor(None, self._scraper.close)
+            await loop.run_in_executor(None, self._scraper.close)

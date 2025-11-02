@@ -3,7 +3,7 @@ from dataclasses import dataclass, replace
 from functools import reduce
 import re
 import asyncio
-from typing import Any, cast, get_args, Union
+from typing import Any, cast, get_args
 
 from httpx import AsyncClient
 
@@ -26,7 +26,7 @@ class Season:
         url: str,
         name: str = "",
         serie_name: str = "",
-        client: Union[AsyncClient, AsyncCloudscraperClient, None] = None,
+        client: AsyncClient | AsyncCloudscraperClient | None = None,
     ) -> None:
         self.url = url
         self.site_url = "/".join(url.split("/")[:3]) + "/"

@@ -4,7 +4,7 @@ from html import unescape
 from dataclasses import dataclass
 import logging
 import re
-from typing import Any, cast, Union
+from typing import Any, cast
 
 from httpx import AsyncClient
 
@@ -37,7 +37,7 @@ class EpisodeRelease:
 
 
 class AnimeSama:
-    def __init__(self, site_url: str, client: Union[AsyncClient, AsyncCloudscraperClient, None] = None) -> None:
+    def __init__(self, site_url: str, client: AsyncClient | AsyncCloudscraperClient | None = None) -> None:
         self.site_url = site_url
         # Use cloudscraper by default to bypass Cloudflare protection
         if client is None:

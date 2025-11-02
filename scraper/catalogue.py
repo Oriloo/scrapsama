@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 import re
-from typing import Any, Literal, cast, Union
+from typing import Any, Literal, cast
 
 from httpx import AsyncClient
 
@@ -27,7 +27,7 @@ class Catalogue:
         categories: set[Category] | None = None,
         languages: set[Lang] | None = None,
         image_url: str = "",
-        client: Union[AsyncClient, AsyncCloudscraperClient, None] = None,
+        client: AsyncClient | AsyncCloudscraperClient | None = None,
     ) -> None:
         if alternative_names is None:
             alternative_names = []
