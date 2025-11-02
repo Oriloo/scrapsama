@@ -5,6 +5,8 @@ services:
     image: mysql:${MYSQL_IMAGE_TAG}
     container_name: ${CONTAINER_NAME_MYSQL}
     restart: unless-stopped
+    profiles:
+      - mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -28,6 +30,8 @@ services:
     image: phpmyadmin:${PMA_IMAGE_TAG}
     container_name: ${CONTAINER_NAME_PMA}
     restart: unless-stopped
+    profiles:
+      - pma
     environment:
       PMA_HOST: ${MYSQL_HOST}
       PMA_PORT: 3306
@@ -81,8 +85,6 @@ services:
     volumes:
       - ./scraper:/app/scraper
     depends_on:
-      mysql:
-        condition: service_healthy
       flaresolverr:
         condition: service_started
     networks:
@@ -99,6 +101,8 @@ services:
         PYTHON_VERSION: ${PYTHON_VERSION}
     container_name: ${CONTAINER_NAME_WEB}
     restart: unless-stopped
+    profiles:
+      - web
     environment:
       DB_HOST: ${MYSQL_HOST}
       DB_PORT: 3306
@@ -114,8 +118,6 @@ services:
       - ./webapp:/app/webapp
       - ./scraper:/app/scraper
     depends_on:
-      mysql:
-        condition: service_healthy
       flaresolverr:
         condition: service_started
     networks:
