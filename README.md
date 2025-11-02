@@ -7,6 +7,7 @@ API for indexing anime series from anime-sama.org into a MySQL database with a w
 - **Indexer**: CLI tools to index anime series, seasons, and episodes into MySQL database
 - **Web Interface**: Browser-based streaming site to search, browse, and watch anime episodes
 - **Database**: MySQL backend for storing series information and player URLs
+- **Cloudflare Bypass**: Built-in support for bypassing Cloudflare protection using cloudscraper
 
 ## Installation
 
@@ -180,6 +181,36 @@ async def get_new_episodes():
 
 asyncio.run(get_new_episodes())
 ```
+
+## Cloudflare Bypass
+
+This scraper includes built-in support for bypassing Cloudflare protection using `cloudscraper`. The implementation automatically uses cloudscraper when available, providing seamless access to anime-sama.org even when Cloudflare anti-bot measures are active.
+
+### How it Works
+
+- **Automatic Detection**: The scraper automatically uses cloudscraper if it's installed, falling back to standard httpx if not available
+- **Async Compatible**: The cloudscraper integration is wrapped in an async interface, maintaining compatibility with the rest of the codebase
+- **No Configuration Needed**: Works out of the box after installation
+
+### Requirements
+
+The cloudscraper dependency is automatically included in `requirements.txt`:
+
+```bash
+pip install -r requirements.txt
+```
+
+Or install it manually:
+
+```bash
+pip install cloudscraper
+```
+
+### Technical Details
+
+The implementation uses `AsyncCloudscraperClient`, which wraps the synchronous cloudscraper in an async interface by executing requests in a thread pool. This allows the scraper to bypass Cloudflare while maintaining the async/await pattern used throughout the codebase.
+
+All HTTP requests through `AnimeSama`, `Catalogue`, and `Season` classes automatically benefit from Cloudflare bypass when cloudscraper is installed.
 
 ## Troubleshooting
 
