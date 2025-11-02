@@ -8,7 +8,7 @@ Scraper pour indexer des séries dans une base de données.
 git clone https://github.com/Oriloo/scrapsama.git
 cd scrapsama
 docker compose up -d
-docker compose run --rm app python init_db.py
+docker compose run --rm app python scraper/init_db.py
 ```
 
 ## Utilisation

@@ -19,7 +19,7 @@ COPY pyproject.toml ./
 COPY scraper ./scraper
 COPY README.md ./
 COPY LICENSE ./
-COPY init_db.py ./
+COPY scraper/init_db.py ./
 
 RUN pip install --no-cache-dir .
 

@@ -81,7 +81,6 @@ services:
       FLARESOLVERR_ENABLED: ${FLARESOLVERR_ENABLED:-true}
     volumes:
       - ./scraper:/app/scraper
-      - ./init_db.py:/app/init_db.py
     depends_on:
       mysql:
         condition: service_healthy
