@@ -4,6 +4,7 @@ from .season import Season
 from .episode import Episode, Languages, Players
 from .langs import Lang, LangId, lang2ids, id2lang, flags
 from .database import Database, DatabaseConfig, index_episode
+from .flaresolverr_client import FlareSolverrClient, create_client
 
 try:
     from .cli.index_series import main
@@ -37,6 +38,8 @@ __all__ = [
     "Database",
     "DatabaseConfig",
     "index_episode",
+    "FlareSolverrClient",
+    "create_client",
 ]
 
 """__locals = locals()
