@@ -219,7 +219,103 @@ async def get_new_episodes():
 asyncio.run(get_new_episodes())
 ```
 
+**Using custom FlareSolverr configuration:**
+```python
+import asyncio
+from scraper import AnimeSama, create_client
+
+async def custom_client_example():
+    # Create a custom client with specific FlareSolverr settings
+    custom_client = create_client(
+        flaresolverr_url="http://localhost:8191/v1",
+        flaresolverr_enabled=True
+    )
+    
+    # Use the custom client
+    anime_sama = AnimeSama("https://anime-sama.org/", client=custom_client)
+    catalogues = await anime_sama.search("one piece")
+    
+    # Don't forget to close the client
+    await custom_client.aclose()
+
+asyncio.run(custom_client_example())
+```
+
+## Anti-Detection Features
+
+Scrapsama includes a robust anti-detection system powered by FlareSolverr to bypass CloudFlare and other bot protection mechanisms.
+
+### How it Works
+
+1. **FlareSolverr Integration**: When enabled, all HTTP requests are routed through FlareSolverr, which uses a real Chrome browser to:
+   - Execute JavaScript and handle dynamic content
+   - Solve CloudFlare challenges automatically
+   - Maintain browser fingerprints and sessions
+   - Handle cookies and redirects naturally
+
+2. **Enhanced HTTP Headers**: Even with FlareSolverr disabled, the scraper uses realistic browser headers:
+   - Modern Chrome User-Agent
+   - French locale preferences (fr-FR)
+   - Proper Accept headers for HTML/CSS/JS
+   - Security headers (Sec-Fetch-*)
+   - DNT (Do Not Track) header
+
+3. **Session Management**: FlareSolverr sessions are automatically created and reused across requests for better performance and consistency.
+
+### Performance Considerations
+
+- **FlareSolverr Enabled**: Slower (~3-5 seconds per request) but more reliable for protected sites
+- **FlareSolverr Disabled**: Faster but may fail on CloudFlare-protected pages
+- **Recommendation**: Keep FlareSolverr enabled for production use
+
+### Debugging
+
+To check if FlareSolverr is working:
+
+```bash
+# Check FlareSolverr status
+curl http://localhost:8191/v1 -X POST -H "Content-Type: application/json" \
+  -d '{"cmd": "sessions.list"}'
+
+# View FlareSolverr logs
+docker logs scrapsama_flaresolverr
+```
+
 ## Troubleshooting
+
+### FlareSolverr Issues
+
+**FlareSolverr not accessible:**
+```bash
+# Check if FlareSolverr is running
+docker ps | grep flaresolverr
+
+# Start FlareSolverr if not running
+docker compose up -d flaresolverr
+
+# Check FlareSolverr logs
+docker logs scrapsama_flaresolverr --tail 50
+
+# Test FlareSolverr manually
+curl http://localhost:8191/v1 -X POST -H "Content-Type: application/json" \
+  -d '{"cmd": "sessions.list"}'
+```
+
+**Requests timing out:**
+```bash
+# FlareSolverr may need more time for complex pages
+# Increase timeout in docker-compose.yml or via environment variable
+export FLARESOLVERR_MAXWAIT=120000  # 2 minutes in milliseconds
+```
+
+**To disable FlareSolverr temporarily:**
+```bash
+# Set environment variable
+export FLARESOLVERR_ENABLED=false
+
+# Or in docker-compose.yml, set:
+# FLARESOLVERR_ENABLED: false
+```
 
 ### Command not found in Docker
 
