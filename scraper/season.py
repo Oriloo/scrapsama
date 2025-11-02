@@ -9,7 +9,7 @@ from httpx import AsyncClient
 
 from .langs import LangId, lang2ids, flagid2lang
 from .episode import Episode, Players, Languages
-from .utils import remove_some_js_comments, zip_varlen, split_and_strip
+from .utils import remove_some_js_comments, zip_varlen, split_and_strip, create_http_client
 
 
 @dataclass
@@ -33,7 +33,7 @@ class Season:
         self.name = name or url.split("/")[-2]
         self.serie_name = serie_name or url.split("/")[-3]
 
-        self.client = client or AsyncClient()
+        self.client = client or create_http_client()
 
     async def get_all_pages(self) -> list[SeasonLangPage]:
         async def process_page(lang_id: LangId) -> SeasonLangPage:
