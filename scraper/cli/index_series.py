@@ -16,6 +16,7 @@ from .utils import safe_input, select_one
 
 from ..top_level import AnimeSama
 from ..database import Database, index_episode, index_serie, index_season
+from ..config import get_anime_sama_url
 
 console = get_console()
 console._highlight = False
@@ -31,8 +32,8 @@ async def index_full_series() -> None:
     query = safe_input("Series name: \033[0;34m", str)
 
     with spinner(f"Searching for [blue]{query}"):
-        catalogues = await AnimeSama("https://anime-sama.org/").search(query)
-    
+        catalogues = await AnimeSama(get_anime_sama_url()).search(query)
+
     if not catalogues:
         console.print(f"[red]No series found for query: {query}[/]")
         return

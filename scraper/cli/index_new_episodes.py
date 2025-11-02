@@ -16,6 +16,7 @@ from rich.status import Status
 
 from ..top_level import AnimeSama
 from ..database import Database, index_episode, index_serie, index_season
+from ..config import get_anime_sama_url
 
 console = get_console()
 console._highlight = False
@@ -46,8 +47,8 @@ async def index_new_episodes() -> None:
         return
     
     # Get new episodes from homepage
-    anime_sama = AnimeSama("https://anime-sama.org/")
-    
+    anime_sama = AnimeSama(get_anime_sama_url())
+
     with spinner("Fetching latest episodes from homepage"):
         try:
             episode_releases = await anime_sama.new_episodes()

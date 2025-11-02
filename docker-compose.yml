@@ -77,6 +77,7 @@ services:
       DB_NAME: ${MYSQL_DATABASE}
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
+      ANIME_SAMA_URL: ${ANIME_SAMA_URL:-https://anime-sama.org/}
       FLARESOLVERR_URL: ${FLARESOLVERR_URL:-http://flaresolverr:8191/v1}
       FLARESOLVERR_ENABLED: ${FLARESOLVERR_ENABLED:-true}
     volumes:
@@ -106,6 +107,7 @@ services:
       DB_NAME: ${MYSQL_DATABASE}
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
+      ANIME_SAMA_URL: ${ANIME_SAMA_URL:-https://anime-sama.org/}
       FLARESOLVERR_URL: ${FLARESOLVERR_URL:-http://flaresolverr:8191/v1}
       FLARESOLVERR_ENABLED: ${FLARESOLVERR_ENABLED:-true}
     ports:
