@@ -44,6 +44,21 @@ services:
     networks:
       - scrapsama_network
 
+  flaresolverr:
+    env_file: .env
+    image: ghcr.io/flaresolverr/flaresolverr:${FLARESOLVERR_IMAGE_TAG:-latest}
+    container_name: ${CONTAINER_NAME_FLARESOLVERR:-scrapsama_flaresolverr}
+    restart: unless-stopped
+    environment:
+      - LOG_LEVEL=${FLARESOLVERR_LOG_LEVEL:-info}
+      - LOG_HTML=${FLARESOLVERR_LOG_HTML:-false}
+      - CAPTCHA_SOLVER=${FLARESOLVERR_CAPTCHA_SOLVER:-none}
+      - TZ=Europe/Paris
+    ports:
+      - "${FLARESOLVERR_HOST_PORT:-8191}:8191"
+    networks:
+      - scrapsama_network
+
   app:
     env_file: .env
     build:
@@ -59,12 +74,16 @@ services:
       DB_NAME: ${MYSQL_DATABASE}
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
+      FLARESOLVERR_URL: ${FLARESOLVERR_URL:-http://flaresolverr:8191/v1}
+      FLARESOLVERR_ENABLED: ${FLARESOLVERR_ENABLED:-true}
     volumes:
       - ./scraper:/app/scraper
       - ./init_db.py:/app/init_db.py
     depends_on:
       mysql:
         condition: service_healthy
+      flaresolverr:
+        condition: service_started
     networks:
       - scrapsama_network
     stdin_open: true
@@ -85,6 +104,8 @@ services:
       DB_NAME: ${MYSQL_DATABASE}
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
+      FLARESOLVERR_URL: ${FLARESOLVERR_URL:-http://flaresolverr:8191/v1}
+      FLARESOLVERR_ENABLED: ${FLARESOLVERR_ENABLED:-true}
     ports:
       - "${WEB_HOST_PORT:-5000}:5000"
     volumes:
@@ -93,6 +114,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      flaresolverr:
+        condition: service_started
     networks:
       - scrapsama_network
 

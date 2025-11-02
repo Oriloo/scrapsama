@@ -7,6 +7,7 @@ API for indexing anime series from anime-sama.org into a MySQL database with a w
 - **Indexer**: CLI tools to index anime series, seasons, and episodes into MySQL database
 - **Web Interface**: Browser-based streaming site to search, browse, and watch anime episodes
 - **Database**: MySQL backend for storing series information and player URLs
+- **Anti-Detection**: FlareSolverr integration for bypassing CloudFlare and other anti-bot protections
 
 ## Installation
 
@@ -19,7 +20,7 @@ Requirements:
 # Build the Docker image (required after updates)
 docker compose build app
 
-# Start services (MySQL + phpMyAdmin + Web Interface)
+# Start services (MySQL + phpMyAdmin + FlareSolverr + Web Interface)
 docker compose up -d
 
 # Initialize database schema
@@ -35,16 +36,28 @@ docker compose run --rm app scrapsama-index
 Access:
 - **Web Interface**: http://localhost:5000 - Browse and watch anime
 - **phpMyAdmin**: http://localhost:8080 (user: root, password: rootpassword)
+- **FlareSolverr**: http://localhost:8191 - Anti-bot protection service
 
 ### Option 2: Local Installation
 
 Requirements:
 - Python 3.10+
 - MySQL 8.0+
+- FlareSolverr (optional, but recommended for better anti-detection)
 
 ```bash
 pip install -e .
 pip install mysql-connector-python rich
+```
+
+If using FlareSolverr locally:
+```bash
+# Using Docker
+docker run -d \
+  --name=flaresolverr \
+  -p 8191:8191 \
+  -e LOG_LEVEL=info \
+  ghcr.io/flaresolverr/flaresolverr:latest
 ```
 
 ## Configuration
@@ -57,6 +70,31 @@ export DB_PORT=3306
 export DB_NAME=scrapsama_db
 export DB_USER=scrapsama_user
 export DB_PASSWORD=scrapsama_password
+```
+
+### FlareSolverr Configuration
+
+FlareSolverr provides strong anti-detection capabilities to bypass CloudFlare and other bot protections. Configure it via environment variables:
+
+```bash
+# Enable/disable FlareSolverr (default: true)
+export FLARESOLVERR_ENABLED=true
+
+# FlareSolverr service URL (default: http://localhost:8191/v1)
+export FLARESOLVERR_URL=http://localhost:8191/v1
+
+# For Docker setup, these are already configured in docker-compose.yml
+```
+
+When enabled, all HTTP requests from the scraper will automatically route through FlareSolverr, which uses a real browser (Chrome) to:
+- Bypass CloudFlare protection
+- Solve CAPTCHAs (if configured)
+- Execute JavaScript and handle dynamic content
+- Mimic real user behavior with proper headers and fingerprints
+
+To disable FlareSolverr and use direct HTTP requests:
+```bash
+export FLARESOLVERR_ENABLED=false
 ```
 
 ## Usage
