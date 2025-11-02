@@ -48,6 +48,7 @@ class FlareSolverrClient(AsyncClient):
         # Session management
         self.session_id: Optional[str] = None
         self._lock = asyncio.Lock()
+        self._request_count = 0  # Track requests for rate limiting
         
         # Anti-detection headers to mimic a real browser
         if "headers" not in kwargs:
@@ -64,6 +65,9 @@ class FlareSolverrClient(AsyncClient):
                 "Sec-Fetch-Site": "none",
                 "Sec-Fetch-User": "?1",
                 "Cache-Control": "max-age=0",
+                "sec-ch-ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": '"Windows"',
             })
         
         if self.flaresolverr_enabled:
@@ -129,6 +133,13 @@ class FlareSolverrClient(AsyncClient):
         Returns:
             Response object with the result from FlareSolverr
         """
+        # Add delay between requests to avoid rate limiting
+        self._request_count += 1
+        if self._request_count > 1:
+            delay = 1.0  # 1 second delay between requests
+            logger.debug(f"Adding {delay}s delay between requests")
+            await asyncio.sleep(delay)
+        
         # Ensure session exists
         if not self.session_id:
             await self._create_session()
@@ -157,17 +168,37 @@ class FlareSolverrClient(AsyncClient):
             data = fs_response.json()
             
             if data.get("status") != "ok":
-                logger.warning(f"FlareSolverr request failed: {data.get('message')}, falling back to direct request")
+                error_msg = data.get('message', 'Unknown error')
+                logger.warning(f"FlareSolverr request failed: {error_msg}")
+
+                # If the error is about Cloudflare detection, log more details
+                if "cloudflare" in error_msg.lower() or "challenge" in error_msg.lower():
+                    logger.error(f"CloudFlare challenge detected by FlareSolverr for {url}")
+                    logger.error(f"Consider increasing timeout or checking FlareSolverr configuration")
+
+                # Fall back to direct request
                 return await super().request(method, url, **kwargs)
             
             solution = data.get("solution", {})
+
+            # Log FlareSolverr response for debugging
+            logger.info(f"FlareSolverr response status: {solution.get('status')}")
+            response_text = solution.get("response", "")
+            if response_text:
+                logger.debug(f"FlareSolverr returned {len(response_text)} chars")
+                # Check if it's a CloudFlare challenge page
+                if "cloudflare" in response_text.lower() or "challenge" in response_text.lower():
+                    logger.warning(f"CloudFlare challenge detected in response for {url}")
+                    logger.warning(f"Response may not be the actual page content")
+            else:
+                logger.warning(f"FlareSolverr returned empty response for {url}")
             
             # Create a mock Response object with FlareSolverr's result
             # We use a simple approach by creating a request and response
             response_data = {
                 "status_code": solution.get("status", 200),
                 "headers": solution.get("headers", {}),
-                "content": solution.get("response", "").encode("utf-8"),
+                "content": response_text.encode("utf-8") if response_text else b"",
             }
             
             # Build a proper response
@@ -179,11 +210,13 @@ class FlareSolverrClient(AsyncClient):
                 request=request,
             )
             
-            logger.debug(f"FlareSolverr request successful for {url}")
+            logger.info(f"FlareSolverr request successful for {url}, status={response.status_code}, content_length={len(response.content)}")
             return response
             
         except Exception as e:
             logger.error(f"Error in FlareSolverr request: {e}, falling back to direct request")
+            import traceback
+            logger.debug(traceback.format_exc())
             return await super().request(method, url, **kwargs)
 
     async def request(
