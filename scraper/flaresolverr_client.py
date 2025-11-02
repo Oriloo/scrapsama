@@ -119,12 +119,12 @@ class FlareSolverrClient(AsyncClient):
         self, method: str, url: str, **kwargs: Any
     ) -> Response:
         """
-        Make a request through FlareSolverr.
+        Make a GET request through FlareSolverr.
         
         Args:
-            method: HTTP method
+            method: HTTP method (only GET is supported)
             url: Target URL
-            **kwargs: Additional request parameters
+            **kwargs: Additional request parameters (ignored for FlareSolverr)
             
         Returns:
             Response object with the result from FlareSolverr
@@ -134,17 +134,13 @@ class FlareSolverrClient(AsyncClient):
             await self._create_session()
         
         payload = {
-            "cmd": "request.get" if method.upper() == "GET" else "request.post",
+            "cmd": "request.get",
             "url": str(url),
             "maxTimeout": self.max_timeout,
         }
         
         if self.session_id:
             payload["session"] = self.session_id
-        
-        # Add POST data if present
-        if method.upper() == "POST" and "data" in kwargs:
-            payload["postData"] = kwargs["data"]
         
         try:
             # Make request to FlareSolverr
@@ -194,7 +190,8 @@ class FlareSolverrClient(AsyncClient):
         self, method: str, url: str, **kwargs: Any
     ) -> Response:
         """
-        Override request method to route through FlareSolverr when enabled.
+        Override request method to route GET requests through FlareSolverr when enabled.
+        Other HTTP methods (POST, PUT, etc.) use the standard httpx client.
         
         Args:
             method: HTTP method
@@ -207,20 +204,20 @@ class FlareSolverrClient(AsyncClient):
         if not self.flaresolverr_enabled:
             return await super().request(method, url, **kwargs)
         
-        # Only use FlareSolverr for GET requests by default
-        # POST requests can be added if needed
+        # Only GET requests are routed through FlareSolverr for web scraping
+        # POST requests are handled directly (e.g., for FlareSolverr API calls)
         if method.upper() == "GET":
             return await self._request_via_flaresolverr(method, url, **kwargs)
         
         return await super().request(method, url, **kwargs)
 
     async def get(self, url: str, **kwargs: Any) -> Response:
-        """Override get method."""
+        """Override get method to route through FlareSolverr."""
         return await self.request("GET", url, **kwargs)
 
     async def post(self, url: str, **kwargs: Any) -> Response:
-        """Override post method."""
-        return await self.request("POST", url, **kwargs)
+        """Override post method - uses standard httpx (not routed through FlareSolverr)."""
+        return await super().request("POST", url, **kwargs)
 
     async def aclose(self) -> None:
         """Override close to cleanup FlareSolverr session."""
