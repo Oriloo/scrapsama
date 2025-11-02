@@ -21,4 +21,4 @@ wheels/
 docker-compose.override.yml
 
 # Test files
-test_*.py
+/test_*.py
