@@ -1,12 +1,13 @@
 from collections.abc import Sequence
 import re
-from typing import Any, Literal, cast
+from typing import Any, Literal, cast, Union
 
 from httpx import AsyncClient
 
 from .utils import remove_some_js_comments
 from .season import Season
 from .langs import flags, Lang
+from .cloudscraper_client import AsyncCloudscraperClient
 
 
 # Oversight from anime-sama that we should handle
@@ -26,7 +27,7 @@ class Catalogue:
         categories: set[Category] | None = None,
         languages: set[Lang] | None = None,
         image_url: str = "",
-        client: AsyncClient | None = None,
+        client: Union[AsyncClient, AsyncCloudscraperClient, None] = None,
     ) -> None:
         if alternative_names is None:
             alternative_names = []
@@ -39,7 +40,14 @@ class Catalogue:
 
         self.url = url + "/" if url[-1] != "/" else url
         self.site_url = "/".join(url.split("/")[:3]) + "/"
-        self.client = client or AsyncClient()
+        # Use cloudscraper by default if no client provided
+        if client is None:
+            try:
+                self.client = AsyncCloudscraperClient()
+            except ImportError:
+                self.client = AsyncClient()
+        else:
+            self.client = client
 
         self.name = name or url.split("/")[-2]
 

@@ -4,7 +4,7 @@ from html import unescape
 from dataclasses import dataclass
 import logging
 import re
-from typing import Any, cast
+from typing import Any, cast, Union
 
 from httpx import AsyncClient
 
@@ -13,6 +13,7 @@ from .season import Season
 from .langs import Lang, flags
 from .utils import filter_literal, is_Literal
 from .catalogue import Catalogue, Category
+from .cloudscraper_client import AsyncCloudscraperClient
 
 
 logger = logging.getLogger(__name__)
@@ -36,9 +37,18 @@ class EpisodeRelease:
 
 
 class AnimeSama:
-    def __init__(self, site_url: str, client: AsyncClient | None = None) -> None:
+    def __init__(self, site_url: str, client: Union[AsyncClient, AsyncCloudscraperClient, None] = None) -> None:
         self.site_url = site_url
-        self.client = client or AsyncClient()
+        # Use cloudscraper by default to bypass Cloudflare protection
+        if client is None:
+            try:
+                self.client = AsyncCloudscraperClient()
+                logger.info("Using AsyncCloudscraperClient for Cloudflare bypass")
+            except ImportError:
+                logger.warning("cloudscraper not available, falling back to httpx")
+                self.client = AsyncClient()
+        else:
+            self.client = client
 
     async def _get_homepage_section(self, section_name: str, how_many: int = 1) -> str:
         homepage = await self.client.get(self.site_url)

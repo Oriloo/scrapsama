@@ -3,13 +3,14 @@ from dataclasses import dataclass, replace
 from functools import reduce
 import re
 import asyncio
-from typing import Any, cast, get_args
+from typing import Any, cast, get_args, Union
 
 from httpx import AsyncClient
 
 from .langs import LangId, lang2ids, flagid2lang
 from .episode import Episode, Players, Languages
 from .utils import remove_some_js_comments, zip_varlen, split_and_strip
+from .cloudscraper_client import AsyncCloudscraperClient
 
 
 @dataclass
@@ -25,7 +26,7 @@ class Season:
         url: str,
         name: str = "",
         serie_name: str = "",
-        client: AsyncClient | None = None,
+        client: Union[AsyncClient, AsyncCloudscraperClient, None] = None,
     ) -> None:
         self.url = url
         self.site_url = "/".join(url.split("/")[:3]) + "/"
@@ -33,7 +34,14 @@ class Season:
         self.name = name or url.split("/")[-2]
         self.serie_name = serie_name or url.split("/")[-3]
 
-        self.client = client or AsyncClient()
+        # Use cloudscraper by default if no client provided
+        if client is None:
+            try:
+                self.client = AsyncCloudscraperClient()
+            except ImportError:
+                self.client = AsyncClient()
+        else:
+            self.client = client
 
     async def get_all_pages(self) -> list[SeasonLangPage]:
         async def process_page(lang_id: LangId) -> SeasonLangPage:
