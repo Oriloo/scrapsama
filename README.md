@@ -1,6 +1,6 @@
 # Scrapsama Indexer
 
-API for indexing anime series from anime-sama.fr into a MySQL database with a web-based streaming interface.
+API for indexing anime series from anime-sama.org into a MySQL database with a web-based streaming interface.
 
 ## Features
 
@@ -80,10 +80,10 @@ Then navigate to http://localhost:5000 in your browser to:
 # Index a specific series (prompts for series name)
 scrapsama-index
 
-# Index all available series from anime-sama.fr
+# Index all available series from anime-sama.org
 scrapsama-index-all
 
-# Index new episodes from anime-sama.fr homepage
+# Index new episodes from anime-sama.org homepage
 # This command fetches the latest episodes and updates the database
 # Perfect for running as a regular cron job to keep the index up-to-date
 scrapsama-index-new
@@ -140,7 +140,7 @@ from scraper import AnimeSama, Database, index_serie, index_season, index_episod
 
 async def index_series(name):
     # Search series
-    anime_sama = AnimeSama("https://anime-sama.fr/")
+    anime_sama = AnimeSama("https://anime-sama.org/")
     catalogues = await anime_sama.search(name)
     catalogue = catalogues[0]
     
@@ -171,7 +171,7 @@ import asyncio
 from scraper import AnimeSama
 
 async def get_new_episodes():
-    anime_sama = AnimeSama("https://anime-sama.fr/")
+    anime_sama = AnimeSama("https://anime-sama.org/")
     episode_releases = await anime_sama.new_episodes()
     
     for release in episode_releases:

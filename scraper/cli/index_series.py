@@ -31,7 +31,7 @@ async def index_full_series() -> None:
     query = safe_input("Series name: \033[0;34m", str)
 
     with spinner(f"Searching for [blue]{query}"):
-        catalogues = await AnimeSama("https://anime-sama.fr/").search(query)
+        catalogues = await AnimeSama("https://anime-sama.org/").search(query)
     
     if not catalogues:
         console.print(f"[red]No series found for query: {query}[/]")
