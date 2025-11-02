@@ -14,6 +14,7 @@ from rich.status import Status
 
 from ..top_level import AnimeSama
 from ..database import Database, index_episode, index_serie, index_season
+from ..config import get_anime_sama_url
 
 console = get_console()
 console._highlight = False
@@ -45,7 +46,7 @@ async def index_all_available_series() -> None:
     
     # Get all available series
     with spinner("Fetching all available series from anime-sama.org"):
-        anime_sama = AnimeSama("https://anime-sama.org/")
+        anime_sama = AnimeSama(get_anime_sama_url())
         catalogues = await anime_sama.all_catalogues()
     
     if not catalogues:

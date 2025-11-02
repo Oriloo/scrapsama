@@ -38,10 +38,18 @@ class FlareSolverrClient(AsyncClient):
         super().__init__(**kwargs)
         
         # Get configuration from environment or use provided values
-        self.flaresolverr_url = flaresolverr_url or os.getenv(
-            "FLARESOLVERR_URL", "http://localhost:8191/v1"
-        )
-        enabled_env = os.getenv("FLARESOLVERR_ENABLED", "true").lower()
+        if flaresolverr_url:
+            self.flaresolverr_url = flaresolverr_url
+        else:
+            url = os.getenv("FLARESOLVERR_URL")
+            if not url:
+                raise ValueError("FLARESOLVERR_URL environment variable is required but not set")
+            self.flaresolverr_url = url
+
+        enabled_env_str = os.getenv("FLARESOLVERR_ENABLED")
+        if not enabled_env_str:
+            raise ValueError("FLARESOLVERR_ENABLED environment variable is required but not set")
+        enabled_env = enabled_env_str.lower()
         self.flaresolverr_enabled = flaresolverr_enabled and enabled_env in ("true", "1", "yes")
         self.max_timeout = max_timeout
         
@@ -280,7 +288,10 @@ def create_client(
         FlareSolverrClient instance
     """
     if flaresolverr_enabled is None:
-        enabled_env = os.getenv("FLARESOLVERR_ENABLED", "true").lower()
+        enabled_env_str = os.getenv("FLARESOLVERR_ENABLED")
+        if not enabled_env_str:
+            raise ValueError("FLARESOLVERR_ENABLED environment variable is required but not set")
+        enabled_env = enabled_env_str.lower()
         flaresolverr_enabled = enabled_env in ("true", "1", "yes")
     
     return FlareSolverrClient(
