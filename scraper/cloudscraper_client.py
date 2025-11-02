@@ -80,8 +80,8 @@ class AsyncCloudscraperClient:
         return self
     
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        """Context manager exit."""
-        # Close the session if needed
+        """Context manager exit - close the underlying requests session."""
         loop = asyncio.get_running_loop()
-        if hasattr(self._scraper, 'close'):
-            await loop.run_in_executor(None, self._scraper.close)
+        # cloudscraper is based on requests.Session which has a close() method
+        if hasattr(self._scraper, 'session') and hasattr(self._scraper.session, 'close'):
+            await loop.run_in_executor(None, self._scraper.session.close)
