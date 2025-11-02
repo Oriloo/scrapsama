@@ -2,8 +2,8 @@ services:
 
   mysql:
     env_file: .env
-    image: mysql:${MYSQL_IMAGE_TAG:-8.0}
-    container_name: ${CONTAINER_NAME_MYSQL:-scrapsama_mysql}
+    image: mysql:${MYSQL_IMAGE_TAG}
+    container_name: ${CONTAINER_NAME_MYSQL}
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -12,7 +12,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     command: --default-authentication-plugin=mysql_native_password --log_error_verbosity=3
     ports:
-      - "${MYSQL_HOST_PORT:-3306}:3306"
+      - "${MYSQL_HOST_PORT}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -26,18 +26,18 @@ services:
 
   phpmyadmin:
     env_file: .env
-    image: phpmyadmin:${PMA_IMAGE_TAG:-latest}
+    image: phpmyadmin:${PMA_IMAGE_TAG}
     platform: linux/arm64
-    container_name: ${CONTAINER_NAME_PMA:-scrapsama_phpmyadmin}
+    container_name: ${CONTAINER_NAME_PMA}
     restart: unless-stopped
     environment:
-      PMA_HOST: ${MYSQL_HOST:-mysql}
-      PMA_PORT: ${MYSQL_HOST_PORT:-3306}
-      PMA_USER: ${MYSQL_ROOT_USER:-root}
+      PMA_HOST: ${MYSQL_HOST}
+      PMA_PORT: ${MYSQL_HOST_PORT}
+      PMA_USER: ${MYSQL_ROOT_USER}
       PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      UPLOAD_LIMIT: ${PMA_UPLOAD_LIMIT:-300M}
+      UPLOAD_LIMIT: ${PMA_UPLOAD_LIMIT}
     ports:
-      - "${PMA_HOST_PORT:-8080}:80"
+      - "${PMA_HOST_PORT}:80"
     depends_on:
       mysql:
         condition: service_healthy
@@ -46,19 +46,19 @@ services:
 
   flaresolverr:
     env_file: .env
-    image: ghcr.io/flaresolverr/flaresolverr:${FLARESOLVERR_IMAGE_TAG:-latest}
-    container_name: ${CONTAINER_NAME_FLARESOLVERR:-scrapsama_flaresolverr}
+    image: ghcr.io/flaresolverr/flaresolverr:${FLARESOLVERR_IMAGE_TAG}
+    container_name: ${CONTAINER_NAME_FLARESOLVERR}
     restart: unless-stopped
     environment:
-      - LOG_LEVEL=${FLARESOLVERR_LOG_LEVEL:-info}
-      - LOG_HTML=${FLARESOLVERR_LOG_HTML:-false}
-      - CAPTCHA_SOLVER=${FLARESOLVERR_CAPTCHA_SOLVER:-none}
+      - LOG_LEVEL=${FLARESOLVERR_LOG_LEVEL}
+      - LOG_HTML=${FLARESOLVERR_LOG_HTML}
+      - CAPTCHA_SOLVER=${FLARESOLVERR_CAPTCHA_SOLVER}
       - TZ=Europe/Paris
-      - HEADLESS=${FLARESOLVERR_HEADLESS:-true}
-      - BROWSER_TIMEOUT=${FLARESOLVERR_BROWSER_TIMEOUT:-40000}
-      - TEST_URL=${FLARESOLVERR_TEST_URL:-https://www.google.com}
+      - HEADLESS=${FLARESOLVERR_HEADLESS}
+      - BROWSER_TIMEOUT=${FLARESOLVERR_BROWSER_TIMEOUT}
+      - TEST_URL=${FLARESOLVERR_TEST_URL}
     ports:
-      - "${FLARESOLVERR_HOST_PORT:-8191}:8191"
+      - "${FLARESOLVERR_HOST_PORT}:8191"
     networks:
       - scrapsama_network
 
@@ -68,18 +68,18 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        PYTHON_VERSION: ${PYTHON_VERSION:-3.12-slim}
-    container_name: ${CONTAINER_NAME_APP:-scrapsama_app}
+        PYTHON_VERSION: ${PYTHON_VERSION}
+    container_name: ${CONTAINER_NAME_APP}
     restart: unless-stopped
     environment:
-      DB_HOST: ${MYSQL_HOST:-mysql}
-      DB_PORT: ${MYSQL_HOST_PORT:-3306}
+      DB_HOST: ${MYSQL_HOST}
+      DB_PORT: ${MYSQL_HOST_PORT}
       DB_NAME: ${MYSQL_DATABASE}
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
-      ANIME_SAMA_URL: ${ANIME_SAMA_URL:-https://anime-sama.org/}
-      FLARESOLVERR_URL: ${FLARESOLVERR_URL:-http://flaresolverr:8191/v1}
-      FLARESOLVERR_ENABLED: ${FLARESOLVERR_ENABLED:-true}
+      ANIME_SAMA_URL: ${ANIME_SAMA_URL}
+      FLARESOLVERR_URL: ${FLARESOLVERR_URL}
+      FLARESOLVERR_ENABLED: ${FLARESOLVERR_ENABLED}
     volumes:
       - ./scraper:/app/scraper
     depends_on:
@@ -98,20 +98,20 @@ services:
       context: .
       dockerfile: Dockerfile.web
       args:
-        PYTHON_VERSION: ${PYTHON_VERSION:-3.12-slim}
-    container_name: ${CONTAINER_NAME_WEB:-scrapsama_web}
+        PYTHON_VERSION: ${PYTHON_VERSION}
+    container_name: ${CONTAINER_NAME_WEB}
     restart: unless-stopped
     environment:
-      DB_HOST: ${MYSQL_HOST:-mysql}
-      DB_PORT: ${MYSQL_HOST_PORT:-3306}
+      DB_HOST: ${MYSQL_HOST}
+      DB_PORT: ${MYSQL_HOST_PORT}
       DB_NAME: ${MYSQL_DATABASE}
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
-      ANIME_SAMA_URL: ${ANIME_SAMA_URL:-https://anime-sama.org/}
-      FLARESOLVERR_URL: ${FLARESOLVERR_URL:-http://flaresolverr:8191/v1}
-      FLARESOLVERR_ENABLED: ${FLARESOLVERR_ENABLED:-true}
+      ANIME_SAMA_URL: ${ANIME_SAMA_URL}
+      FLARESOLVERR_URL: ${FLARESOLVERR_URL}
+      FLARESOLVERR_ENABLED: ${FLARESOLVERR_ENABLED}
     ports:
-      - "${WEB_HOST_PORT:-5000}:5000"
+      - "${WEB_HOST_PORT}:5000"
     volumes:
       - ./webapp:/app/webapp
       - ./scraper:/app/scraper

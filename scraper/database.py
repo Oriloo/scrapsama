@@ -18,13 +18,37 @@ class DatabaseConfig:
 
     @classmethod
     def from_env(cls) -> "DatabaseConfig":
-        """Load database configuration from environment variables."""
+        """Load database configuration from environment variables.
+
+        Raises:
+            ValueError: If required environment variables are not set
+        """
+        host = os.getenv("DB_HOST")
+        if not host:
+            raise ValueError("DB_HOST environment variable is required but not set")
+
+        port_str = os.getenv("DB_PORT")
+        if not port_str:
+            raise ValueError("DB_PORT environment variable is required but not set")
+
+        database = os.getenv("DB_NAME")
+        if not database:
+            raise ValueError("DB_NAME environment variable is required but not set")
+
+        user = os.getenv("DB_USER")
+        if not user:
+            raise ValueError("DB_USER environment variable is required but not set")
+
+        password = os.getenv("DB_PASSWORD")
+        if not password:
+            raise ValueError("DB_PASSWORD environment variable is required but not set")
+
         return cls(
-            host=os.getenv("DB_HOST", "localhost"),
-            port=int(os.getenv("DB_PORT", "3306")),
-            database=os.getenv("DB_NAME", "scrapsama_db"),
-            user=os.getenv("DB_USER", "scrapsama_user"),
-            password=os.getenv("DB_PASSWORD", "scrapsama_password"),
+            host=host,
+            port=int(port_str),
+            database=database,
+            user=user,
+            password=password,
         )
 
 
