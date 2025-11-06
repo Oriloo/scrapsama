@@ -29,8 +29,20 @@ if [ ! -f "/vpn/config/protonvpn.ovpn" ]; then
     # Set default config URL pattern - users should provide the full config file via volume mount
     # or we use a basic template
     if [ -n "$PROTONVPN_CONFIG_URL" ]; then
-        wget -O /vpn/config/protonvpn.ovpn "$PROTONVPN_CONFIG_URL"
+        # Validate URL format (basic check for http/https)
+        if [[ "$PROTONVPN_CONFIG_URL" =~ ^https?:// ]]; then
+            wget -O /vpn/config/protonvpn.ovpn "$PROTONVPN_CONFIG_URL"
+        else
+            echo "ERROR: PROTONVPN_CONFIG_URL must be a valid http/https URL"
+            exit 1
+        fi
     else
+        # Validate server hostname format (alphanumeric, dots, dashes)
+        if [[ ! "$PROTONVPN_SERVER" =~ ^[a-zA-Z0-9.-]+$ ]]; then
+            echo "ERROR: PROTONVPN_SERVER contains invalid characters"
+            exit 1
+        fi
+        
         # Create basic OpenVPN configuration template
         cat > /vpn/config/protonvpn.ovpn <<EOF
 client
@@ -99,7 +111,7 @@ echo "Firewall rules applied - kill switch active"
 # Display configuration info
 echo "=== VPN Configuration ==="
 echo "Server: $PROTONVPN_SERVER"
-echo "Username: $PROTONVPN_USERNAME"
+echo "Username: [REDACTED]"
 echo "========================="
 
 # Start OpenVPN with the configuration
