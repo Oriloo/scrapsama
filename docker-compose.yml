@@ -82,8 +82,8 @@ services:
       ANIME_SAMA_URL: ${ANIME_SAMA_URL}
       FLARESOLVERR_URL: ${FLARESOLVERR_URL}
       FLARESOLVERR_ENABLED: ${FLARESOLVERR_ENABLED}
-    volumes:
-      - ./scraper:/app/scraper
+#    volumes:
+#      - ./scraper:/app/scraper
     depends_on:
       flaresolverr:
         condition: service_started
