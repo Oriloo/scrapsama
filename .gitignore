@@ -20,8 +20,7 @@ wheels/
 .env
 docker-compose.override.yml
 
-# VPN configuration (contains sensitive data)
-vpn-config/
+# VPN configuration
 *.ovpn
 
 # Test files
