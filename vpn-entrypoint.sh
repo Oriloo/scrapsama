@@ -15,10 +15,12 @@ if [ -z "$PROTONVPN_SERVER" ]; then
     exit 1
 fi
 
-# Create credentials file
-echo "$PROTONVPN_USERNAME" > /vpn/credentials/auth.txt
-echo "$PROTONVPN_PASSWORD" >> /vpn/credentials/auth.txt
-chmod 600 /vpn/credentials/auth.txt
+# Create credentials file with atomic write
+CRED_TEMP=$(mktemp)
+echo "$PROTONVPN_USERNAME" > "$CRED_TEMP"
+echo "$PROTONVPN_PASSWORD" >> "$CRED_TEMP"
+chmod 600 "$CRED_TEMP"
+mv "$CRED_TEMP" /vpn/credentials/auth.txt
 
 echo "Credentials file created"
 
@@ -31,6 +33,8 @@ if [ ! -f "/vpn/config/protonvpn.ovpn" ]; then
     if [ -n "$PROTONVPN_CONFIG_URL" ]; then
         # Validate URL format (basic check for http/https)
         if [[ "$PROTONVPN_CONFIG_URL" =~ ^https?:// ]]; then
+            # Download with SSL verification enabled
+            wget --secure-protocol=auto --https-only -O /vpn/config/protonvpn.ovpn "$PROTONVPN_CONFIG_URL" || \
             wget -O /vpn/config/protonvpn.ovpn "$PROTONVPN_CONFIG_URL"
         else
             echo "ERROR: PROTONVPN_CONFIG_URL must be a valid http/https URL"

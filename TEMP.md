@@ -23,7 +23,9 @@ Les services `app`, `flaresolverr` et `web` utilisent `network_mode: "service:vp
 - `FLARESOLVERR_URL` doit être configuré à `http://localhost:8191/v1` au lieu de `http://flaresolverr:8191/v1`
 - Les ports sont exposés via le conteneur VPN (8191 pour FlareSolverr, 5000 pour Web)
 
-**Important** : MySQL et PhpMyAdmin restent sur le réseau Docker normal (`scrapsama_network`) et ne passent pas par le VPN. Le scraper peut y accéder car les règles iptables autorisent les réseaux Docker locaux (172.16.0.0/12).
+**Important** : MySQL et PhpMyAdmin restent sur le réseau Docker normal (`scrapsama_network`) et ne passent pas par le VPN. Le scraper peut y accéder car les règles iptables autorisent les réseaux Docker locaux (172.16.0.0/12). Cette plage est intentionnellement large pour assurer la compatibilité avec toutes les configurations Docker par défaut.
+
+**Note sur l'accessibilité des services** : Lorsque plusieurs services utilisent `network_mode: service:vpn`, ils partagent le même espace réseau et peuvent communiquer via `localhost`. C'est pourquoi `FLARESOLVERR_URL` doit être configuré à `http://localhost:8191/v1` au lieu de `http://flaresolverr:8191/v1`.
 
 ## Prérequis
 
@@ -131,12 +133,14 @@ docker compose build
 # Démarrer le service VPN
 docker compose up -d vpn
 
-# Vérifier que le VPN est connecté (attendre ~30 secondes)
+# Vérifier que le VPN est connecté (attendre ~30-60 secondes)
 docker compose logs vpn
 
 # Démarrer les autres services
 docker compose up -d
 ```
+
+**Note importante sur l'ordre de démarrage** : Le VPN doit être complètement connecté (status "healthy") avant que les autres services démarrent. Les services app, flaresolverr et web ont une dépendance `condition: service_healthy` sur le VPN, donc Docker Compose attendra automatiquement. Si vous voyez des erreurs de connexion, vérifiez que le VPN est bien en état "healthy" avec `docker compose ps`.
 
 ### 4. Initialiser la base de données (première utilisation)
 
