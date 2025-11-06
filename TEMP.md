@@ -140,7 +140,16 @@ docker compose logs vpn
 docker compose up -d
 ```
 
-**Note importante sur l'ordre de démarrage** : Le VPN doit être complètement connecté (status "healthy") avant que les autres services démarrent. Les services app, flaresolverr et web ont une dépendance `condition: service_healthy` sur le VPN, donc Docker Compose attendra automatiquement. Si vous voyez des erreurs de connexion, vérifiez que le VPN est bien en état "healthy" avec `docker compose ps`.
+**Note importante sur l'ordre de démarrage** : Le VPN doit être complètement connecté (status "healthy") avant que les autres services démarrent. Les services app, flaresolverr et web ont une dépendance `condition: service_healthy` sur le VPN, donc Docker Compose attendra automatiquement. 
+
+**Healthcheck du VPN** : Le conteneur VPN utilise un healthcheck qui vérifie :
+1. L'existence de l'interface tunnel `tun0`
+2. La capacité à ping 1.1.1.1 à travers le VPN
+
+Le VPN peut prendre 60-90 secondes pour être considéré "healthy" après le démarrage. Si vous voyez des erreurs de connexion ou "container is unhealthy", vérifiez :
+- Les logs du VPN : `docker compose logs vpn`
+- Le statut des conteneurs : `docker compose ps`
+- Que vos identifiants ProtonVPN sont corrects dans `.env`
 
 ### 4. Initialiser la base de données (première utilisation)
 
@@ -229,6 +238,43 @@ docker compose start vpn
 ```
 
 ## Dépannage
+
+### Le conteneur VPN est "unhealthy"
+
+Si vous voyez l'erreur `container scrapsama_vpn is unhealthy` ou `dependency failed to start`:
+
+1. **Vérifier les logs du VPN** :
+```bash
+docker compose logs vpn
+```
+Recherchez des erreurs de connexion OpenVPN ou des problèmes d'authentification.
+
+2. **Vérifier les identifiants** :
+   - Les identifiants dans `.env` doivent être les identifiants OpenVPN/IKEv2 (pas vos identifiants de compte)
+   - Vérifiez sur [https://account.protonvpn.com](https://account.protonvpn.com) → Account → OpenVPN/IKEv2 username
+
+3. **Attendre le healthcheck** :
+Le VPN peut prendre jusqu'à 90 secondes pour devenir "healthy". Le healthcheck vérifie que l'interface `tun0` existe et peut ping 1.1.1.1.
+
+4. **Vérifier manuellement la connexion** :
+```bash
+# Vérifier si le conteneur est en cours d'exécution
+docker compose ps vpn
+
+# Vérifier l'interface tun0
+docker compose exec vpn ip link show tun0
+
+# Tester le ping
+docker compose exec vpn ping -c 3 1.1.1.1
+```
+
+5. **Redémarrer le service VPN** :
+```bash
+docker compose down vpn
+docker compose up -d vpn
+# Attendre 90 secondes puis vérifier le statut
+docker compose ps vpn
+```
 
 ### Le VPN ne se connecte pas
 

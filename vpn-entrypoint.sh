@@ -94,6 +94,10 @@ iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
 iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
 
+# Allow ICMP (ping) for healthcheck
+iptables -A OUTPUT -p icmp -j ACCEPT
+iptables -A INPUT -p icmp -j ACCEPT
+
 # Allow VPN connection to ProtonVPN servers
 iptables -A OUTPUT -p udp --dport 1194 -j ACCEPT
 iptables -A OUTPUT -p tcp --dport 1194 -j ACCEPT
