@@ -69,9 +69,42 @@ reneg-sec 0
 # Certificate and keys - must be provided via volume mount or config
 # Users should mount their ProtonVPN config file to /vpn/config/protonvpn.ovpn
 EOF
-        echo "WARNING: Basic configuration template created. Please provide full ProtonVPN OpenVPN config file."
-        echo "Mount your .ovpn file to /vpn/config/protonvpn.ovpn"
+        echo "======================================================================="
+        echo "WARNING: Basic configuration template created WITHOUT certificates!"
+        echo "This configuration WILL FAIL to connect to ProtonVPN."
+        echo ""
+        echo "To fix this, you MUST provide a complete OpenVPN configuration file:"
+        echo "1. Download your .ovpn file from https://account.protonvpn.com/downloads"
+        echo "2. Create a 'vpn-config' directory in the project root"
+        echo "3. Copy your .ovpn file to vpn-config/protonvpn.ovpn"
+        echo "4. Uncomment the volume mount in docker-compose.yml:"
+        echo "   - ./vpn-config/protonvpn.ovpn:/vpn/config/protonvpn.ovpn:ro"
+        echo "5. Restart the VPN service: docker compose restart vpn"
+        echo ""
+        echo "OR set PROTONVPN_CONFIG_URL to download a config automatically"
+        echo "======================================================================="
+        
+        # Give user time to see the warning
+        sleep 5
     fi
+fi
+
+# Validate that the config file has certificates (basic check)
+if ! grep -q "BEGIN CERTIFICATE" /vpn/config/protonvpn.ovpn 2>/dev/null && \
+   ! grep -q "<ca>" /vpn/config/protonvpn.ovpn 2>/dev/null; then
+    echo "======================================================================="
+    echo "ERROR: OpenVPN configuration file is missing required certificates!"
+    echo ""
+    echo "The configuration at /vpn/config/protonvpn.ovpn does not contain"
+    echo "the necessary CA certificate to connect to ProtonVPN."
+    echo ""
+    echo "Please provide a complete .ovpn file from ProtonVPN:"
+    echo "https://account.protonvpn.com/downloads"
+    echo ""
+    echo "The container will continue to retry every 10 seconds..."
+    echo "======================================================================="
+    sleep 10
+    exit 1
 fi
 
 # Set up iptables for kill switch

@@ -37,7 +37,29 @@ Vous devez avoir un compte ProtonVPN (gratuit ou payant). Récupérez vos identi
 2. Allez dans **Account** → **OpenVPN/IKEv2 username**
 3. Notez votre **Username** et **Password** (différents de vos identifiants de compte)
 
-### 2. Configuration Docker
+### 2. Fichier de configuration OpenVPN (OBLIGATOIRE)
+
+**IMPORTANT** : Vous DEVEZ fournir un fichier de configuration OpenVPN complet de ProtonVPN contenant les certificats nécessaires. Sans cela, le VPN ne pourra pas se connecter.
+
+**Option recommandée** : Télécharger un fichier .ovpn depuis ProtonVPN
+
+1. Allez sur [https://account.protonvpn.com/downloads](https://account.protonvpn.com/downloads)
+2. Sélectionnez :
+   - **Platform** : Linux
+   - **Protocol** : UDP (recommandé) ou TCP
+   - **Free servers** : Sélectionnez un serveur gratuit (NL, JP, US) OU
+   - **Premium servers** : Si vous avez un abonnement payant
+3. Téléchargez le fichier `.ovpn`
+4. Créez un dossier `vpn-config` à la racine du projet
+5. Copiez le fichier téléchargé dans `vpn-config/protonvpn.ovpn`
+6. Dans `docker-compose.yml`, décommentez la ligne :
+   ```yaml
+   - ./vpn-config/protonvpn.ovpn:/vpn/config/protonvpn.ovpn:ro
+   ```
+
+**Sans un fichier .ovpn complet, le conteneur VPN redémarrera continuellement avec une erreur.**
+
+### 3. Configuration Docker
 
 Le système hôte doit supporter :
 - Docker avec support de `NET_ADMIN` capability
@@ -110,21 +132,46 @@ vpn:
 
 ## Installation
 
-### 1. Copier le fichier d'exemple
+### 1. Télécharger le fichier de configuration ProtonVPN (OBLIGATOIRE)
+
+**Étape essentielle** : Sans ce fichier, le VPN ne fonctionnera pas.
+
+1. Allez sur [https://account.protonvpn.com/downloads](https://account.protonvpn.com/downloads)
+2. Sélectionnez un serveur (ex: NL Free #1 pour compte gratuit)
+3. Téléchargez le fichier `.ovpn`
+4. Créez le dossier de configuration :
+   ```bash
+   mkdir -p vpn-config
+   ```
+5. Copiez le fichier téléchargé :
+   ```bash
+   cp ~/Téléchargements/nl-free-01.protonvpn.net.udp.ovpn vpn-config/protonvpn.ovpn
+   ```
+
+### 2. Activer le volume dans docker-compose.yml
+
+Éditez `docker-compose.yml` et décommentez cette ligne (ligne ~21) :
+
+```yaml
+vpn:
+  volumes:
+    - ./vpn-config/protonvpn.ovpn:/vpn/config/protonvpn.ovpn:ro  # Décommentez cette ligne
+    - vpn_credentials:/vpn/credentials
+```
+
+### 3. Copier et éditer le fichier .env
 
 ```bash
 cp .env.example .env
-```
-
-### 2. Éditer le fichier .env
-
-Modifiez `.env` avec vos identifiants ProtonVPN :
-
-```bash
 nano .env  # ou votre éditeur préféré
 ```
 
-### 3. Construire et démarrer les services
+Modifiez les variables avec vos identifiants ProtonVPN :
+- `PROTONVPN_USERNAME` : votre username OpenVPN/IKEv2
+- `PROTONVPN_PASSWORD` : votre password OpenVPN/IKEv2
+- `PROTONVPN_SERVER` : doit correspondre au fichier .ovpn (ex: `nl-free-01.protonvpn.net`)
+
+### 4. Construire et démarrer les services
 
 ```bash
 # Construire les images
@@ -238,6 +285,37 @@ docker compose start vpn
 ```
 
 ## Dépannage
+
+### Le conteneur VPN redémarre continuellement (Restarting)
+
+Si vous voyez `STATUS: Restarting (255)` avec `docker compose ps vpn`:
+
+**Cause** : Le fichier de configuration OpenVPN est manquant ou incomplet (pas de certificats).
+
+**Solution** :
+1. **Vérifiez les logs** :
+```bash
+docker compose logs vpn | tail -30
+```
+Vous devriez voir un message d'erreur indiquant que les certificats sont manquants.
+
+2. **Téléchargez un fichier .ovpn complet** :
+   - Allez sur https://account.protonvpn.com/downloads
+   - Téléchargez un fichier `.ovpn` pour votre serveur
+   - Placez-le dans `vpn-config/protonvpn.ovpn`
+
+3. **Activez le volume mount** dans `docker-compose.yml` :
+```yaml
+vpn:
+  volumes:
+    - ./vpn-config/protonvpn.ovpn:/vpn/config/protonvpn.ovpn:ro
+```
+
+4. **Redémarrez** :
+```bash
+docker compose down vpn
+docker compose up -d vpn
+```
 
 ### Le conteneur VPN est "unhealthy"
 

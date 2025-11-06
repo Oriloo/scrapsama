@@ -7,7 +7,21 @@ Scraper pour indexer des séries dans une base de données.
 ```bash
 git clone https://github.com/Oriloo/scrapsama.git
 cd scrapsama
+
+# 1. Télécharger un fichier OpenVPN de ProtonVPN (OBLIGATOIRE)
+# Allez sur https://account.protonvpn.com/downloads
+# Téléchargez un fichier .ovpn et placez-le dans vpn-config/protonvpn.ovpn
+mkdir -p vpn-config
+# Copiez votre fichier téléchargé ici
+
+# 2. Activer le volume dans docker-compose.yml
+# Décommentez la ligne: - ./vpn-config/protonvpn.ovpn:/vpn/config/protonvpn.ovpn:ro
+
+# 3. Configurer les identifiants
 cp .env.example .env
+# Éditez .env avec vos identifiants ProtonVPN OpenVPN/IKEv2
+
+# 4. Démarrer les services
 docker compose up -d
 docker compose run --rm app python scraper/init_db.py
 ```
