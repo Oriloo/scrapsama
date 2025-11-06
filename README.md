@@ -4,6 +4,8 @@ Scraper pour indexer des séries dans une base de données.
 
 ## Installation
 
+**Note pour utilisateurs Windows** : Si vous obtenez l'erreur `exec /vpn/entrypoint.sh: no such file or directory`, c'est un problème de fins de ligne. Voir TEMP.md section "Dépannage" → "Erreur exec /vpn/entrypoint.sh".
+
 ```bash
 git clone https://github.com/Oriloo/scrapsama.git
 cd scrapsama

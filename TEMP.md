@@ -354,6 +354,39 @@ docker compose up -d vpn
 docker compose ps vpn
 ```
 
+### Erreur "exec /vpn/entrypoint.sh: no such file or directory" (Utilisateurs Windows)
+
+**Cause** : Les scripts shell ont des fins de ligne Windows (CRLF) au lieu de Unix (LF).
+
+**Solution** :
+
+1. **Supprimer et re-cloner le dépôt** (recommandé) :
+```bash
+cd ..
+rm -rf scrapsama
+git clone https://github.com/Oriloo/scrapsama.git
+cd scrapsama
+```
+
+2. **OU convertir les fins de ligne manuellement** :
+```bash
+# Sur Windows avec Git Bash
+dos2unix vpn-entrypoint.sh vpn-up.sh vpn-down.sh
+
+# OU avec PowerShell
+(Get-Content vpn-entrypoint.sh -Raw) -replace "`r`n","`n" | Set-Content vpn-entrypoint.sh -NoNewline
+(Get-Content vpn-up.sh -Raw) -replace "`r`n","`n" | Set-Content vpn-up.sh -NoNewline
+(Get-Content vpn-down.sh -Raw) -replace "`r`n","`n" | Set-Content vpn-down.sh -NoNewline
+```
+
+3. **Reconstruire l'image** :
+```bash
+docker compose build vpn --no-cache
+docker compose up -d vpn
+```
+
+**Prévention** : Le fichier `.gitattributes` garantit maintenant que les scripts shell utilisent toujours LF, même sur Windows.
+
 ### Le VPN ne se connecte pas
 
 1. **Vérifier les identifiants** :
