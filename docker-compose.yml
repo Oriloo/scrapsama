@@ -1,5 +1,42 @@
 services:
 
+  vpn:
+    env_file: .env
+    build:
+      context: .
+      dockerfile: Dockerfile.vpn
+    container_name: ${CONTAINER_NAME_VPN}
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    environment:
+      - PROTONVPN_USERNAME=${PROTONVPN_USERNAME}
+      - PROTONVPN_PASSWORD=${PROTONVPN_PASSWORD}
+      - PROTONVPN_SERVER=${PROTONVPN_SERVER}
+      - PROTONVPN_CONFIG_URL=${PROTONVPN_CONFIG_URL:-}
+    volumes:
+      # Optional: mount your own ProtonVPN OpenVPN config file
+      # - ./vpn-config/protonvpn.ovpn:/vpn/config/protonvpn.ovpn:ro
+      - vpn_credentials:/vpn/credentials
+    ports:
+      # Expose flaresolverr port through VPN
+      - "${FLARESOLVERR_HOST_PORT}:8191"
+      # Expose web port through VPN if using web profile
+      - "${WEB_HOST_PORT}:5000"
+    networks:
+      - scrapsama_network
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    healthcheck:
+      test: ["CMD", "sh", "-c", "ping -c 1 1.1.1.1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
   mysql:
     env_file: .env
     image: mysql:${MYSQL_IMAGE_TAG}
@@ -51,6 +88,7 @@ services:
     image: ghcr.io/flaresolverr/flaresolverr:${FLARESOLVERR_IMAGE_TAG}
     container_name: ${CONTAINER_NAME_FLARESOLVERR}
     restart: unless-stopped
+    network_mode: "service:vpn"
     environment:
       - LOG_LEVEL=${FLARESOLVERR_LOG_LEVEL}
       - LOG_HTML=${FLARESOLVERR_LOG_HTML}
@@ -59,10 +97,9 @@ services:
       - HEADLESS=${FLARESOLVERR_HEADLESS}
       - BROWSER_TIMEOUT=${FLARESOLVERR_BROWSER_TIMEOUT}
       - TEST_URL=${FLARESOLVERR_TEST_URL}
-    ports:
-      - "${FLARESOLVERR_HOST_PORT}:8191"
-    networks:
-      - scrapsama_network
+    depends_on:
+      vpn:
+        condition: service_healthy
 
   app:
     env_file: .env
@@ -73,6 +110,7 @@ services:
         PYTHON_VERSION: ${PYTHON_VERSION}
     container_name: ${CONTAINER_NAME_APP}
     restart: unless-stopped
+    network_mode: "service:vpn"
     environment:
       DB_HOST: ${MYSQL_HOST}
       DB_PORT: 3306
@@ -85,10 +123,10 @@ services:
 #    volumes:
 #      - ./scraper:/app/scraper
     depends_on:
+      vpn:
+        condition: service_healthy
       flaresolverr:
         condition: service_started
-    networks:
-      - scrapsama_network
     stdin_open: true
     tty: true
 
@@ -103,6 +141,7 @@ services:
     restart: unless-stopped
     profiles:
       - web
+    network_mode: "service:vpn"
     environment:
       DB_HOST: ${MYSQL_HOST}
       DB_PORT: 3306
@@ -112,16 +151,14 @@ services:
       ANIME_SAMA_URL: ${ANIME_SAMA_URL}
       FLARESOLVERR_URL: ${FLARESOLVERR_URL}
       FLARESOLVERR_ENABLED: ${FLARESOLVERR_ENABLED}
-    ports:
-      - "${WEB_HOST_PORT}:5000"
     volumes:
       - ./webapp:/app/webapp
       - ./scraper:/app/scraper
     depends_on:
+      vpn:
+        condition: service_healthy
       flaresolverr:
         condition: service_started
-    networks:
-      - scrapsama_network
 
 networks:
   scrapsama_network:
@@ -129,3 +166,4 @@ networks:
 
 volumes:
   mysql_data:
+  vpn_credentials:
