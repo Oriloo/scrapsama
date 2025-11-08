@@ -18,7 +18,10 @@ RUN mkdir -p /vpn/config /vpn/credentials
 COPY vpn-entrypoint.sh /vpn/entrypoint.sh
 COPY vpn-up.sh /vpn/up.sh
 COPY vpn-down.sh /vpn/down.sh
-RUN chmod +x /vpn/entrypoint.sh /vpn/up.sh /vpn/down.sh
+
+# Fix line endings and set execute permissions
+RUN sed -i 's/\r$//' /vpn/entrypoint.sh /vpn/up.sh /vpn/down.sh && \
+    chmod +x /vpn/entrypoint.sh /vpn/up.sh /vpn/down.sh
 
 # Set working directory
 WORKDIR /vpn
