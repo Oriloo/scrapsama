@@ -1,0 +1,5 @@
+# Ignore actual OpenVPN configuration files
+*.ovpn
+
+# Keep this directory in git with just the README
+!README.md
