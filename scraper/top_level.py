@@ -117,6 +117,12 @@ class AnimeSama:
                 language,
                 descriptive,
             ) = match.groups()
+            
+            # Skip entries with empty serie_name to prevent searching for all series
+            if not serie_name or not serie_name.strip():
+                logger.debug(f"Skipping release with empty serie_name from URL: {season_url}")
+                continue
+            
             categories = categories.split(", ") if categories else ["Anime"]
             language = language.strip() if language else "VOSTFR"
 
