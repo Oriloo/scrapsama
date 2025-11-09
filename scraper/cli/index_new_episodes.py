@@ -82,6 +82,12 @@ async def index_new_episodes() -> None:
         console.print(f"  Language: {release.language}")
         console.print(f"  Description: {release.descriptive}")
         
+        # Skip if serie_name is empty (indicates parsing failure)
+        if not release.serie_name or not release.serie_name.strip():
+            console.print(f"[yellow]  ⚠ Skipping release with empty series name[/]")
+            error_count += 1
+            continue
+        
         try:
             # Search for the series to get full catalogue information
             with spinner(f"Searching for series [blue]{release.serie_name}"):

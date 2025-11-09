@@ -58,8 +58,9 @@ class AnimeSama:
     def _yield_catalogues_from(self, html: str) -> Generator[Catalogue]:
         text_without_script = re.sub(r"<script[\W\w]+?</script>", "", html)
         # More flexible regex pattern that handles whitespace variations
+        # Match content between > and < tags, allowing newlines within the content
         for match in re.finditer(
-            rf"href=\"({self.site_url}catalogue/[^\"]+)\"[^>]*>[\s\S]*?src=\"([^\"]+)\"[^>]*>[\s\S]*?>\s*([^<\n]+)[\s\S]*?>\s*([^<\n]*)[\s\S]*?>\s*([^<\n]*)[\s\S]*?>\s*([^<\n]*)[\s\S]*?>\s*([^<\n]*)\s*<",
+            rf"href=\"({self.site_url}catalogue/[^\"]+)\"[\W\w]+?src=\"([^\"]+)\"[\W\w]+?>((?:[^<]|\n)+?)<[\W\w]+?>((?:[^<]|\n)*?)<[\W\w]+?>((?:[^<]|\n)*?)<[\W\w]+?>((?:[^<]|\n)*?)<[\W\w]+?>((?:[^<]|\n)*?)<",
             text_without_script,
         ):
             (
@@ -111,8 +112,9 @@ class AnimeSama:
 
     def _yield_release_episodes_from(self, html: str) -> Generator[EpisodeRelease]:
         # More flexible regex pattern that handles whitespace variations
+        # Match content between > and < tags, allowing newlines within the content
         for match in re.finditer(
-            rf"href=\"({self.site_url}catalogue/[^\"]+)\"[^>]*>[\s\S]*?src=\"([^\"]+)\"[^>]*>[\s\S]*?>\s*([^<\n]+)[\s\S]*?>\s*([^<\n]*)[\s\S]*?>\s*([^<\n]*)[\s\S]*?>\s*([^<\n]*)\s*<",
+            rf"href=\"({self.site_url}catalogue/[^\"]+)\"[\W\w]+?src=\"([^\"]+)\"[\W\w]+?>((?:[^<]|\n)+?)<[\W\w]+?>((?:[^<]|\n)*?)<[\W\w]+?>((?:[^<]|\n)*?)<[\W\w]+?>((?:[^<]|\n)*?)<",
             html,
         ):
             (
