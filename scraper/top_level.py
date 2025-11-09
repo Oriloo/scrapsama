@@ -57,10 +57,8 @@ class AnimeSama:
 
     def _yield_catalogues_from(self, html: str) -> Generator[Catalogue]:
         text_without_script = re.sub(r"<script[\W\w]+?</script>", "", html)
-        # More flexible regex pattern that handles whitespace variations
-        # Match content between > and < tags, allowing newlines within the content
         for match in re.finditer(
-            rf"href=\"({self.site_url}catalogue/[^\"]+)\"[\W\w]+?src=\"([^\"]+)\"[\W\w]+?>((?:[^<]|\n)+?)<[\W\w]+?>((?:[^<]|\n)*?)<[\W\w]+?>((?:[^<]|\n)*?)<[\W\w]+?>((?:[^<]|\n)*?)<[\W\w]+?>((?:[^<]|\n)*?)<",
+            rf"href=\"({self.site_url}catalogue/.+)\"[\W\w]+?src=\"(.+?)\"[\W\w]+?>(.*)\n?<[\W\w]+?>(.*)\n?<[\W\w]+?>(.*)\n?<[\W\w]+?>(.*)\n?<[\W\w]+?>(.*)\n?<",
             text_without_script,
         ):
             (
@@ -71,11 +69,7 @@ class AnimeSama:
                 genres_str,
                 categories_str,
                 languages_str,
-            ) = (unescape(item.strip()) for item in match.groups())
-
-            # Skip if name is empty (indicates regex mismatch)
-            if not name:
-                continue
+            ) = (unescape(item) for item in match.groups())
 
             alternative_names = (
                 alternative_names_str.split(", ") if alternative_names_str else []
@@ -111,28 +105,26 @@ class AnimeSama:
             )
 
     def _yield_release_episodes_from(self, html: str) -> Generator[EpisodeRelease]:
-        # More flexible regex pattern that handles whitespace variations
-        # Match content between > and < tags, allowing newlines within the content
         for match in re.finditer(
-            rf"href=\"({self.site_url}catalogue/[^\"]+)\"[\W\w]+?src=\"([^\"]+)\"[\W\w]+?>((?:[^<]|\n)+?)<[\W\w]+?>((?:[^<]|\n)*?)<[\W\w]+?>((?:[^<]|\n)*?)<[\W\w]+?>((?:[^<]|\n)*?)<",
+            rf"href=\"({self.site_url}catalogue/.+)\"[\W\w]+?src=\"(.+?)\"[\W\w]+?>(.*)\n?<[\W\w]+?>(.*)\n?<[\W\w]+?>(.*)\n?<[\W\w]+?>(.*)\n?<",
             html,
         ):
             (
                 season_url,
                 image_url,
                 serie_name,
-                categories_str,
+                categories,
                 language,
                 descriptive,
-            ) = (item.strip() for item in match.groups())
+            ) = match.groups()
             
-            # Skip if serie_name is empty (indicates regex mismatch)
-            if not serie_name:
+            # Skip entries with empty serie_name to prevent searching for all series
+            if not serie_name or not serie_name.strip():
                 logger.debug(f"Skipping release with empty serie_name from URL: {season_url}")
                 continue
             
-            categories = categories_str.split(", ") if categories_str else ["Anime"]
-            language = language if language else "VOSTFR"
+            categories = categories.split(", ") if categories else ["Anime"]
+            language = language.strip() if language else "VOSTFR"
 
             def not_in_literal(value: Any) -> None:
                 logger.warning(
@@ -224,17 +216,7 @@ class AnimeSama:
         Return the new available episodes on anime-sama using the homepage sorted from oldest to newest.
         """
         section = await self._get_homepage_section("ajouts animes", 4)
-        
-        if not section:
-            logger.warning("Could not find 'ajouts animes' section on homepage")
-            return []
-        
         release_episodes = list(self._yield_release_episodes_from(section))
-        
-        if not release_episodes:
-            logger.warning("No episode releases found in homepage section")
-            logger.debug(f"Section content length: {len(section)}")
-        
         return list(reversed(release_episodes))
 
     """async def new_scans(self) -> list[Scan]:

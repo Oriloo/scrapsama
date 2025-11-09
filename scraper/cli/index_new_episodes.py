@@ -82,7 +82,7 @@ async def index_new_episodes() -> None:
         console.print(f"  Language: {release.language}")
         console.print(f"  Description: {release.descriptive}")
         
-        # Skip if serie_name is empty (indicates parsing failure)
+        # Skip if serie_name is empty (safety check, should already be filtered)
         if not release.serie_name or not release.serie_name.strip():
             console.print(f"[yellow]  ⚠ Skipping release with empty series name[/]")
             error_count += 1

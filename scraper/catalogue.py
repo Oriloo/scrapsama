@@ -60,39 +60,16 @@ class Catalogue:
         if not response.is_success:
             self._page = ""
         else:
-            page_text = response.text
-            # Check if we got a CloudFlare challenge page instead of real content
-            if page_text and ("checking your browser" in page_text.lower() or 
-                             ("cloudflare" in page_text.lower() and "challenge" in page_text.lower())):
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.warning(f"Received CloudFlare challenge page for {self.url}")
-                self._page = ""
-            else:
-                self._page = page_text
+            self._page = response.text
 
         return self._page
 
     async def seasons(self) -> list[Season]:
         page_without_comments = remove_some_js_comments(string=await self.page())
 
-        # Try multiple patterns to handle website changes
-        # Pattern 1: Original panneauAnime pattern
         seasons = re.findall(
             r'panneauAnime\("(.+?)", *"(.+?)(?:vostfr|vf)"\);', page_without_comments
         )
-        
-        # Pattern 2: Alternative with single quotes
-        if not seasons:
-            seasons = re.findall(
-                r"panneauAnime\('(.+?)', *'(.+?)(?:vostfr|vf)'\);", page_without_comments
-            )
-        
-        # Pattern 3: More flexible whitespace handling
-        if not seasons:
-            seasons = re.findall(
-                r'panneauAnime\(\s*["\'](.+?)["\']\s*,\s*["\'](.+?)(?:vostfr|vf)["\']\s*\);', page_without_comments
-            )
 
         seasons = [
             Season(
