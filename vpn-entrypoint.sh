@@ -155,10 +155,21 @@ echo "Server: $PROTONVPN_SERVER"
 echo "Username: [REDACTED]"
 echo "========================="
 
+# Display system information
+echo "=== System Information ==="
+echo "Kernel: $(uname -r)"
+echo "Available network interfaces:"
+ip link show
+echo "TUN device status:"
+ls -la /dev/net/tun || echo "TUN device not found!"
+echo "========================="
+
 # Start OpenVPN with the configuration
 echo "Starting OpenVPN connection..."
+echo "OpenVPN will now attempt to connect..."
 exec openvpn --config /vpn/config/protonvpn.ovpn \
     --auth-user-pass /vpn/credentials/auth.txt \
     --script-security 2 \
     --up /vpn/up.sh \
-    --down /vpn/down.sh
+    --down /vpn/down.sh \
+    --verb 3

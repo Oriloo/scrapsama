@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     wget \
     ca-certificates \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
 # Create directories for VPN configuration
@@ -18,10 +19,11 @@ RUN mkdir -p /vpn/config /vpn/credentials
 COPY vpn-entrypoint.sh /vpn/entrypoint.sh
 COPY vpn-up.sh /vpn/up.sh
 COPY vpn-down.sh /vpn/down.sh
+COPY vpn-healthcheck.sh /vpn/healthcheck.sh
 
 # Fix line endings and set execute permissions
-RUN sed -i 's/\r$//' /vpn/entrypoint.sh /vpn/up.sh /vpn/down.sh && \
-    chmod +x /vpn/entrypoint.sh /vpn/up.sh /vpn/down.sh
+RUN sed -i 's/\r$//' /vpn/entrypoint.sh /vpn/up.sh /vpn/down.sh /vpn/healthcheck.sh && \
+    chmod +x /vpn/entrypoint.sh /vpn/up.sh /vpn/down.sh /vpn/healthcheck.sh
 
 # Set working directory
 WORKDIR /vpn

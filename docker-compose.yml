@@ -28,11 +28,11 @@ services:
       - 1.1.1.1
       - 1.0.0.1
     healthcheck:
-      test: ["CMD", "sh", "-c", "ip link show tun0 2>/dev/null && ping -c 1 -W 2 1.1.1.1 || exit 1"]
+      test: ["CMD", "sh", "-c", "ip link show tun0 2>/dev/null && ping -c 1 -W 5 1.1.1.1 || exit 1"]
       interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 90s
+      timeout: 15s
+      retries: 10
+      start_period: 120s
 
   mysql:
     env_file: .env
