@@ -194,12 +194,18 @@ class FlareSolverrClient(AsyncClient):
             response_text = solution.get("response", "")
             if response_text:
                 logger.debug(f"FlareSolverr returned {len(response_text)} chars")
-                # Check if it's a CloudFlare challenge page
-                if "cloudflare" in response_text.lower() or "challenge" in response_text.lower():
-                    logger.warning(f"CloudFlare challenge detected in response for {url}")
-                    logger.warning(f"Response may not be the actual page content")
+                # Check if it's a CloudFlare challenge page - if so, reject it
+                response_lower = response_text.lower()
+                if ("cloudflare" in response_lower and "challenge" in response_lower) or \
+                   "checking your browser" in response_lower or \
+                   "just a moment" in response_lower:
+                    logger.error(f"CloudFlare challenge page detected in response for {url}")
+                    logger.error(f"FlareSolverr failed to solve the challenge, falling back to direct request")
+                    return await super().request(method, url, **kwargs)
             else:
                 logger.warning(f"FlareSolverr returned empty response for {url}")
+                # Empty response is invalid, fall back to direct request
+                return await super().request(method, url, **kwargs)
             
             # Create a mock Response object with FlareSolverr's result
             # We use a simple approach by creating a request and response

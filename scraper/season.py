@@ -45,6 +45,15 @@ class Season:
                 return SeasonLangPage(lang_id=lang_id)
 
             html = response.text
+            
+            # Check if we got a CloudFlare challenge page
+            if html and ("checking your browser" in html.lower() or 
+                        ("cloudflare" in html.lower() and "challenge" in html.lower())):
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Received CloudFlare challenge page for {page_url}")
+                return SeasonLangPage(lang_id=lang_id)
+            
             match_url = re.search(r"episodes\.js\?filever=\d+", html)
 
             if not match_url:
@@ -64,16 +73,18 @@ class Season:
         )
         pages_dict = {page.lang_id: page for page in pages}
         if pages_dict["vostfr"].html:
-            flag_id_vo = re.findall(
+            flag_matches = re.findall(
                 r"src=\".+flag_(.+?)\.png\".*?[\n\t]*<p.*?>VO</p>",
                 remove_some_js_comments(pages_dict["vostfr"].html),
-            )[0]
-
-            for lang_id in lang2ids[flagid2lang[flag_id_vo]]:
-                if not pages_dict[lang_id].html:
-                    pages_dict[lang_id] = replace(pages_dict["vostfr"])  # replace=copy
-                    pages_dict[lang_id].lang_id = lang_id
-                    break
+            )
+            
+            if flag_matches:
+                flag_id_vo = flag_matches[0]
+                for lang_id in lang2ids[flagid2lang[flag_id_vo]]:
+                    if not pages_dict[lang_id].html:
+                        pages_dict[lang_id] = replace(pages_dict["vostfr"])  # replace=copy
+                        pages_dict[lang_id].lang_id = lang_id
+                        break
 
         return [value for value in pages_dict.values() if value.html]
 
