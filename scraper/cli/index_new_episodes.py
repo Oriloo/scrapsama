@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Index new episodes from anime-sama homepage to the database.
 
-This script fetches the latest episodes from anime-sama.fr homepage
+This script fetches the latest episodes from anime-sama.org homepage
 and indexes them to the database. It's designed to be run regularly
 (e.g., via cron) to keep the database up-to-date with new content.
 """
@@ -28,7 +28,7 @@ def spinner(text: str) -> Status:
 
 async def index_new_episodes() -> None:
     """Index new episodes from the anime-sama homepage."""
-    console.print("\n[cyan bold]Fetching latest episodes from anime-sama.fr[/]\n")
+    console.print("\n[cyan bold]Fetching latest episodes from anime-sama.org[/]\n")
     
     # Initialize database connection
     db = Database()
@@ -46,7 +46,7 @@ async def index_new_episodes() -> None:
         return
     
     # Get new episodes from homepage
-    anime_sama = AnimeSama("https://anime-sama.fr/")
+    anime_sama = AnimeSama("https://anime-sama.org/")
     
     with spinner("Fetching latest episodes from homepage"):
         try:

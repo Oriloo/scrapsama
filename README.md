@@ -1,6 +1,6 @@
 # Scrapsama
 
-API Python pour indexer les séries anime depuis anime-sama.fr dans une base de données MySQL.
+API Python pour indexer les séries anime depuis anime-sama.org dans une base de données MySQL.
 
 ## Fonctionnalités
 
@@ -188,7 +188,7 @@ from scraper import AnimeSama, Database
 
 async def index_series(name):
     # Rechercher la série
-    anime_sama = AnimeSama("https://anime-sama.fr/")
+    anime_sama = AnimeSama("https://anime-sama.org/")
     catalogues = await anime_sama.search(name)
     
     if not catalogues:
@@ -227,7 +227,7 @@ import asyncio
 from scraper import AnimeSama
 
 async def get_new_episodes():
-    anime_sama = AnimeSama("https://anime-sama.fr/")
+    anime_sama = AnimeSama("https://anime-sama.org/")
     episode_releases = await anime_sama.new_episodes()
     
     for release in episode_releases:
@@ -243,7 +243,7 @@ import asyncio
 from scraper import AnimeSama
 
 async def search_anime(query):
-    anime_sama = AnimeSama("https://anime-sama.fr/")
+    anime_sama = AnimeSama("https://anime-sama.org/")
     results = await anime_sama.search(query)
     
     for catalogue in results:
