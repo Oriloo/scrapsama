@@ -21,7 +21,7 @@ services:
       - vpn_credentials:/vpn/credentials
     ports:
       - "${FLARESOLVERR_HOST_PORT}:8191"
-      - "${WEB_HOST_PORT}:5000"
+#      - "${WEB_HOST_PORT}:5000"
     networks:
       - scrapsama_network
     dns:
@@ -138,7 +138,11 @@ services:
     restart: unless-stopped
     profiles:
       - web
-    network_mode: "service:vpn"
+#    network_mode: "service:vpn"
+    networks:
+      - scrapsama_network
+    ports:
+      - "1803:5000"
     environment:
       DB_HOST: ${MYSQL_HOST}
       DB_PORT: 3306
